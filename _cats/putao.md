@@ -16,5 +16,8 @@ photos:
   - /images/cats/putao7.jpg
 ---
 
-Putao is Coco's father — a mature and dignified seal bicolor Ragdoll with a warm heart.  
-He enjoys observing everything around him, grooming Coco, and sitting next to people quietly.
+Putao is a gentle and affectionate seal bicolor Ragdoll who loves human company and behaves obediently.  
+Though he doesn’t seem to eat much, he’s surprisingly chubby.  
+He is always polite toward people — but not quite so with Coco.  
+He often chases Coco around and engages in playful wrestling, perhaps as a father’s way of teaching discipline.  
+Despite this, Putao remains a gentleman: at mealtime, he always waits for Coco to finish eating before starting on his own.

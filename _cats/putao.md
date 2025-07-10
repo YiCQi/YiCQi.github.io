@@ -1,7 +1,7 @@
 ---
 title: "Putao"
 gender: "Male"
-birthdate: "2023-01-01"
+birthdate: "2020-06-18"
 breed: "Seal Bicolor Ragdoll"
 image: /images/cats/putao.jpg
 layout: cat

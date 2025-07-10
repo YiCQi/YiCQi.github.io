@@ -1,0 +1,13 @@
+<div class="experience-entry">
+  <h2>{{ include.experience.title }}</h2>
+  <p><strong>{{ include.experience.institution }}</strong>, Mentor: {{ include.experience.mentor }}  
+  <br />{{ include.experience.start_date }} – {{ include.experience.end_date }}</p>
+  <ul>
+    {% for line in include.experience.content | newline_to_br | split: '<br />' %}
+      {% if line != "" %}
+        <li>{{ line | strip }}</li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+</div>
+<hr />

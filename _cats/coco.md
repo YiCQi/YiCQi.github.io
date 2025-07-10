@@ -2,7 +2,7 @@
 title: "Coco"
 name: "Coco"
 gender: "Male"
-birthdate: "2024-01-01"
+birthdate: "2021-09-03"
 breed: "Mitted Ragdoll"
 layout: cat
 photos:
@@ -17,4 +17,7 @@ photos:
 ---
 
 Coco is a young mitted Ragdoll cat with fluffy white gloves and gentle blue eyes.  
-He loves chasing toys and sleeping in the sun. Despite being young, he's already full of charm and curiosity.
+He spends most of his day napping peacefully or scratching enthusiastically at his cat scratching board.  
+He's very food-motivated — every time food is served, he meows loudly with anticipation, though he’s still leaner than his dad, Putao.  
+Coco is shy around strangers: the moment someone unfamiliar enters, he hides himself away completely.
+When you ignore him for too long, he will come and give you a bite.

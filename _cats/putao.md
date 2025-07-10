@@ -1,6 +1,5 @@
 ---
 title: "Putao"
-name: "Putao"
 gender: "Male"
 birthdate: "2023-01-01"
 breed: "Seal Bicolor Ragdoll"

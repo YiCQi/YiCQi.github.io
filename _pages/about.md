@@ -9,9 +9,11 @@ redirect_from:
 
 I am an undergraduate student studying bioinformatics🧬 at Zhejiang University🇨🇳.
 
-My current research interests include developing algorithms for multi/sub-cellular spatial transcriptomics and multi-modality integration. 
+My current research interests include developing algorithms🧑‍💻 for multi/sub-cellular spatial transcriptomics and multi-modality integration. 
 
-The picture on the left is my cat, Coco. He's way more good-looking than me, so I decided to put him here for everyone’s admiration.
+Outside of academics, I enjoy playing music🎶 and solving Rubik’s cubes. I’m also a big fan of pc games🎮.
+
+The picture on the left is my cat🐱, Coco. He's way more good-looking than me, so I decided to put him here for everyone’s admiration🐾.
 
 Educations
 ======

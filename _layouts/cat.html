@@ -11,4 +11,8 @@ layout: single
   {{ content }}
 </div>
 
-{% include cat-gallery.html photos=page.photos name=page.name %}
+<div class="cat-gallery">
+  {% for photo in page.photos %}
+    <img src="{{ photo }}" alt="{{ name }} photo {{ forloop.index }}">
+  {% endfor %}
+</div>

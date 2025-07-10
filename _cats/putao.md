@@ -7,6 +7,7 @@ breed: "Seal Bicolor Ragdoll"
 layout: cat
 photos:
   - /images/cats/putaoyoung.jpg
+  - /images/cats/putao.jpg
   - /images/cats/putao1.jpg
   - /images/cats/putao2.jpg
   - /images/cats/putao3.jpg

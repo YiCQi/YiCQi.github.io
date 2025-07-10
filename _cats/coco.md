@@ -7,6 +7,7 @@ breed: "Mitted Ragdoll"
 layout: cat
 photos:
   - /images/cats/cocoyoung.jpg
+  - /images/cats/coco.jpg
   - /images/cats/coco1.jpg
   - /images/cats/coco2.jpg
   - /images/cats/coco3.jpg

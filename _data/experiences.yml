@@ -1,0 +1,47 @@
+- category: "Research Projects"
+  items:
+    - title: "SpatialTCR: An integrated platform for high-resolution spatial sequencing of T cell receptor repertoires"
+      institution: "ZJU-UoE Institute, Zhejiang University"
+      mentor: "Prof. Wanlu Liu"
+      time: "04/2025 – Present"
+      details:
+        - "Developed a high-resolution spatial TCR profiling method leveraging Stereo-seq, enabling accurate reconstruction of TCR alpha and beta chains directly from tissue sections."
+        - "Created a dedicated computational pipeline for reliable chain pairing, clonotype mapping, and integration with spatial transcriptomic data."
+        - "Applied the platform to human tissues, revealing spatial T cell clonotype distributions and immune microenvironments with high confidence."
+
+    - title: "LAMPOpti: Advanced LAMP Primer Design Model"
+      institution: "ZJU-UoE Institute, Zhejiang University"
+      mentor: "Dr. Hugo C. Sámano-Sánchez"
+      time: "02/2025 – Present"
+      details:
+        - "Developed a LAMP primer design tool based on comprehensive threshold screening of primer characteristics."
+        - "Built a predictive model using extensive LAMP experimental data to evaluate primer performance and forecast amplification success under various conditions."
+
+    - title: "SpatialMETA: A Novel Framework for Integrating Spatial Transcriptomics and Metabolomics Data"
+      institution: "ZJU-UoE Institute, Zhejiang University"
+      mentor: "Prof. Wanlu Liu"
+      time: "09/2024 – 04/2025"
+      details:
+        - "Conducted large-scale benchmarking of 7 integration methods (spaVAE, scVI, scPoli, etc.) across 6 multi-batch spatial transcriptomic-metabolomic datasets."
+        - "Developed a quantitative batch integration assessment system including:"
+        - "  - Basic ST assessment (Continuity (CHAOS, PAS, etc.), Marker score (Moran’s, Geary's, etc.), Specificity score (Specificity, Logistic regression, etc.))"
+        - "  - Biological conservation (ASW, Cell-type LISI, etc.)"
+        - "  - Batch correction (Batch ASW, Integration LISI, etc.)"
+        - "  - Reconstruction fidelity (Cosine Similarity, Pearson Correlation)"
+
+    - title: "HDSTdb: High-definition Spatial Transcriptomics Database"
+      institution: "ZJU-UoE Institute, Zhejiang University"
+      mentor: "Prof. Wanlu Liu"
+      time: "04/2024 – 09/2024"
+      details:
+        - "Analyzed 246 healthy and diseased samples from three subcellular-level spatial transcriptomic platforms: Visium HD, Stereo-seq, and Xenium."
+        - "Developed an interactive, multi-resolution visualization tool with features such as adjustable leiden clustering and differential gene expression (DEG) analysis."
+        - "Enabled visualization of cell segmentation with advanced analyses, including cell shape characterization, spatial distribution, and cell-cell interactions."
+
+    - title: "Disease-Specific TCR Identification from Bulk TCR Sequencing Data"
+      institution: "ZJU-UoE Institute, Zhejiang University"
+      mentor: "Prof. Wanlu Liu"
+      time: "04/2023 – 04/2024"
+      details:
+        - "Processed and analyzed multi-disease bulk TCR datasets comprising 465.8 million human TCR entries, from 59 NCBI projects and 66 immuneACCESS projects, enabling comprehensive TCR repertoire analysis."
+        - "Developed a disease-specific recognition framework utilizing unsupervised learning methodologies with the GIANA tool, enhancing TCR classification accuracy."

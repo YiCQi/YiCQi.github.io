@@ -25,7 +25,7 @@ author_profile: true
 </style>
 
 <div class="cat-gallery">
-  {% for cat in site.cats %}
+  {% for cat in site.cats: %}
     <div class="cat-card">
       <a href="{{ cat.url }}">
         {% if cat.image %}

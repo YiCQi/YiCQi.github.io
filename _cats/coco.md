@@ -4,6 +4,7 @@ name: "Coco"
 gender: "Male"
 birthdate: "2021-09-03"
 breed: "Mitted Ragdoll"
+image: /images/cats/coco.jpg
 layout: cat
 photos:
   - /images/cats/cocoyoung.jpg

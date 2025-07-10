@@ -1,6 +1,5 @@
 ---
 title: "Coco"
-name: "Coco"
 gender: "Male"
 birthdate: "2021-09-03"
 breed: "Mitted Ragdoll"

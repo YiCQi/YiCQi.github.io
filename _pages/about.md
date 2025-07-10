@@ -7,9 +7,9 @@ redirect_from:
   - /about.html
 ---
 
-I am an undergraduate student studying bioinformatics at Zhejiang University.
+I am an undergraduate student studying bioinformatics🧬 at Zhejiang University🇨🇳.
 
-My research interests include the development of algorithms for multi/sub-cellular spatial transcriptomics, as well as multi-modality integration.
+My research interests include developing algorithms for multi/sub-cellular spatial transcriptomics and multi-modality integration.
 
 Research Experience
 ======

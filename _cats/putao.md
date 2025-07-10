@@ -4,6 +4,7 @@ name: "Putao"
 gender: "Male"
 birthdate: "2023-01-01"
 breed: "Seal Bicolor Ragdoll"
+image: /images/cats/putao.jpg
 layout: cat
 photos:
   - /images/cats/putaoyoung.jpg

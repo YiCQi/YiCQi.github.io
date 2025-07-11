@@ -45,6 +45,13 @@
       background-color: #6b8eb9;
     }
 
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
     #start {
       margin-top: 1rem;
       font-size: 1.2rem;
@@ -101,20 +108,21 @@
 <body>
   <h1>Minesweeper</h1>
 
-  <div class="settings">
-    <div class="preset-buttons">
-      <button onclick="setDifficulty(9,9,10)">Beginner</button>
-      <button onclick="setDifficulty(16,16,40)">Intermediate</button>
-      <button onclick="setDifficulty(30,16,99)">Expert</button>
+  <div class="controls">
+    <div class="settings">
+      <div class="preset-buttons">
+        <button onclick="setDifficulty(9,9,10)">Beginner</button>
+        <button onclick="setDifficulty(16,16,40)">Intermediate</button>
+        <button onclick="setDifficulty(30,16,99)">Expert</button>
+      </div>
+      <div>
+        <label>Rows: <input type="number" id="rows" value="9"></label>
+        <label>Cols: <input type="number" id="cols" value="9"></label>
+        <label>Mines: <input type="number" id="mines" value="10"></label>
+      </div>
     </div>
-    <div>
-      <label>Rows: <input type="number" id="rows" value="9"></label>
-      <label>Cols: <input type="number" id="cols" value="9"></label>
-      <label>Mines: <input type="number" id="mines" value="10"></label>
-    </div>
+    <button id="start" onclick="startGame()">Start Game</button>
   </div>
-
-  <button id="start" onclick="startGame()">Start Game</button>
 
   <table id="game"></table>
 

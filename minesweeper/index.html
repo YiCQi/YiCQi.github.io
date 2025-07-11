@@ -172,7 +172,6 @@
       cols = parseInt(document.getElementById('cols').value);
       mines = parseInt(document.getElementById('mines').value);
 
-      // 防止雷数过多
       if (mines >= rows * cols) {
         alert("Mines must be fewer than total cells!");
         return;
@@ -186,6 +185,7 @@
       flagsCount = 0;
       timeElapsed = 0;
       clearInterval(timerInterval);
+      timerInterval = null;
       document.getElementById('timer').innerText = '0';
       document.getElementById('mines-left').innerText = mines;
 
@@ -239,7 +239,7 @@
       const r = parseInt(this.dataset.row);
       const c = parseInt(this.dataset.col);
 
-      if (e.button === 2) { // 右键标记旗帜
+      if (e.button === 2) {
         toggleFlag(this, r, c);
         checkWin();
         return;
@@ -277,6 +277,8 @@
         alert('Boom! Game Over.');
         revealAllMines();
         clearInterval(timerInterval);
+        timerInterval = null;
+        firstClick = true;
         return;
       }
 
@@ -322,7 +324,9 @@
       }
       if (revealedCount === rows * cols - mines) {
         clearInterval(timerInterval);
+        timerInterval = null;
         alert(`You Win! Time: ${timeElapsed} seconds`);
+        firstClick = true;
         startGame();
       }
     }

@@ -1,30 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
   <title>Minesweeper</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: linear-gradient(135deg, #f0f0f0 25%, #dcdcdc 100%);
-      padding: 20px;
+      padding: 30px;
       text-align: center;
-      touch-action: manipulation; /* 优化移动端触摸响应 */
     }
 
     h1 {
       margin-bottom: 10px;
       color: #333;
-    }
-
-    .game-info {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      margin-bottom: 1rem;
-      font-size: 1.2rem;
-      font-weight: bold;
     }
 
     .settings {
@@ -60,7 +49,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-bottom: 1rem;
+      margin-bottom: 2rem;
     }
 
     #start {
@@ -78,9 +67,18 @@
       background-color: #315f7c;
     }
 
+    .status {
+      margin-top: 10px;
+      font-size: 1.1rem;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+
     #game {
       display: inline-block;
-      margin-top: 1rem;
+      margin-top: 2rem;
       border-collapse: collapse;
       border: 2px solid #333;
       box-shadow: 4px 4px 12px rgba(0,0,0,0.3);
@@ -107,12 +105,12 @@
 
     td.flag {
       background-color: #ffe4b5;
-      font-size: 20px;
+      color: red;
     }
 
     td.bomb {
       background-color: #f08080;
-      font-size: 20px;
+      color: black;
     }
 
     /* Classic Minesweeper number colors */
@@ -129,11 +127,6 @@
 <body>
   <h1>Minesweeper</h1>
 
-  <div class="game-info">
-    <div>Time: <span id="timer">0</span></div>
-    <div>Mines Left: <span id="mines-left">0</span></div>
-  </div>
-
   <div class="controls">
     <div class="settings">
       <div class="preset-buttons">
@@ -142,30 +135,31 @@
         <button onclick="setDifficulty(30,16,99)">Expert</button>
       </div>
       <div>
-        <label>Rows: <input type="number" id="rows" value="9"></label>
-        <label>Cols: <input type="number" id="cols" value="9"></label>
-        <label>Mines: <input type="number" id="mines" value="10"></label>
+        <label>Rows: <input type="number" id="rows" value="9" min="1" max="50"></label>
+        <label>Cols: <input type="number" id="cols" value="9" min="1" max="50"></label>
+        <label>Mines: <input type="number" id="mines" value="10" min="1"></label>
       </div>
     </div>
     <button id="start" onclick="startGame()">Start Game</button>
+
+    <!-- 计时器和剩余雷数显示 -->
+    <div class="status">
+      <div>Time: <span id="timer">0</span>s</div>
+      <div>Mines left: <span id="mines-left">0</span></div>
+    </div>
   </div>
 
   <table id="game"></table>
 
   <script>
+    let firstClick = true;
     let board = [], mineSet = new Set();
-    let rows, cols, mines;
-    let revealedCells = 0;
-    let flags = 0;
-    let gameOver = false;
-    
-    // Timer variables
-    let timerInterval;
-    let time = 0;
+    let rows = 9, cols = 9, mines = 10;
 
-    // Mobile long press variables
-    let longPressTimer;
-    let longPressDuration = 500; // 500ms for long press
+    // 计时器相关变量
+    let timerInterval = null;
+    let timeElapsed = 0;
+    let flagsCount = 0;
 
     function setDifficulty(r, c, m) {
       document.getElementById('rows').value = r;
@@ -177,33 +171,23 @@
       rows = parseInt(document.getElementById('rows').value);
       cols = parseInt(document.getElementById('cols').value);
       mines = parseInt(document.getElementById('mines').value);
-      
+
+      // 防止雷数过多
       if (mines >= rows * cols) {
-          alert("Number of mines must be less than the total number of cells.");
-          return;
+        alert("Mines must be fewer than total cells!");
+        return;
       }
 
-      resetGame();
-      createBoard();
-    }
-    
-    function resetGame() {
-        gameOver = false;
-        revealedCells = 0;
-        flags = 0;
-        mineSet.clear();
-        document.getElementById('mines-left').innerText = mines;
-        
-        // Reset and stop timer
-        clearInterval(timerInterval);
-        time = 0;
-        document.getElementById('timer').innerText = time;
-    }
-
-    function createBoard() {
       const game = document.getElementById('game');
       game.innerHTML = '';
       board = [];
+      firstClick = true;
+      mineSet.clear();
+      flagsCount = 0;
+      timeElapsed = 0;
+      clearInterval(timerInterval);
+      document.getElementById('timer').innerText = '0';
+      document.getElementById('mines-left').innerText = mines;
 
       for (let r = 0; r < rows; r++) {
         const row = [];
@@ -212,34 +196,8 @@
           const td = document.createElement('td');
           td.dataset.row = r;
           td.dataset.col = c;
-          
-          // Desktop: Right-click for flag
-          td.oncontextmenu = function(e) {
-              e.preventDefault();
-              if (gameOver) return;
-              toggleFlag(this, r, c);
-          };
-
-          // Desktop: Left-click
-          td.onclick = function() {
-            if (gameOver) return;
-            handleClick(this, r, c);
-          };
-
-          // Mobile: Touch events for long press
-          td.ontouchstart = function(e) {
-            e.preventDefault();
-            if (gameOver) return;
-            longPressTimer = setTimeout(() => {
-                toggleFlag(this, r, c);
-            }, longPressDuration);
-          };
-
-          td.ontouchend = function(e) {
-            e.preventDefault();
-            clearTimeout(longPressTimer);
-          };
-
+          td.onmousedown = handleClick;
+          addLongPressHandler(td, r, c);
           tr.appendChild(td);
           row.push({ revealed: false, mine: false, flag: false, number: 0 });
         }
@@ -248,12 +206,11 @@
       }
     }
 
-    function placeMines(firstClickR, firstClickC) {
-      // Place mines randomly, avoiding the first clicked cell
+    function placeMines(excludeR, excludeC) {
       while (mineSet.size < mines) {
         const r = Math.floor(Math.random() * rows);
         const c = Math.floor(Math.random() * cols);
-        if (r === firstClickR && c === firstClickC) continue;
+        if (r === excludeR && c === excludeC) continue;
         const key = `${r},${c}`;
         if (!mineSet.has(key)) {
           mineSet.add(key);
@@ -261,7 +218,6 @@
         }
       }
 
-      // Calculate numbers for non-mine cells
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           if (board[r][c].mine) continue;
@@ -269,8 +225,8 @@
           for (let dr = -1; dr <= 1; dr++) {
             for (let dc = -1; dc <= 1; dc++) {
               const nr = r + dr, nc = c + dc;
-              if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && mineSet.has(`${nr},${nc}`)) {
-                count++;
+              if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                if (mineSet.has(`${nr},${nc}`)) count++;
               }
             }
           }
@@ -279,66 +235,55 @@
       }
     }
 
-    function startTimer() {
-        if (timerInterval) return; // Prevent multiple intervals
-        timerInterval = setInterval(() => {
-            time++;
-            document.getElementById('timer').innerText = time;
-        }, 1000);
-    }
+    function handleClick(e) {
+      const r = parseInt(this.dataset.row);
+      const c = parseInt(this.dataset.col);
 
-    function handleClick(cell, r, c) {
-      if (gameOver) return;
-      const cellData = board[r][c];
-      if (cellData.revealed || cellData.flag) return;
-
-      if (revealedCells === 0) {
+      if (e.button === 2) { // 右键标记旗帜
+        toggleFlag(this, r, c);
+        checkWin();
+        return;
+      }
+      if (firstClick) {
         placeMines(r, c);
+        firstClick = false;
         startTimer();
       }
-      
       reveal(r, c);
-      checkWinCondition();
+      checkWin();
     }
 
     function toggleFlag(cell, r, c) {
-      if (gameOver || board[r][c].revealed) return;
-
+      if (board[r][c].revealed) return;
       board[r][c].flag = !board[r][c].flag;
-      if (board[r][c].flag) {
-        flags++;
-        cell.classList.add('flag');
-        cell.innerText = '🚩';
-      } else {
-        flags--;
-        cell.classList.remove('flag');
-        cell.innerText = '';
-      }
-      document.getElementById('mines-left').innerText = mines - flags;
+      cell.classList.toggle('flag');
+      cell.innerText = board[r][c].flag ? '🚩' : '';
+      flagsCount += board[r][c].flag ? 1 : -1;
+      document.getElementById('mines-left').innerText = mines - flagsCount;
     }
 
     function reveal(r, c) {
       if (r < 0 || r >= rows || c < 0 || c >= cols) return;
-      const cellData = board[r][c];
+      const cell = board[r][c];
       const td = document.querySelector(`td[data-row="${r}"][data-col="${c}"]`);
-      if (cellData.revealed || cellData.flag) return;
+      if (cell.revealed || cell.flag) return;
 
-      cellData.revealed = true;
-      revealedCells++;
+      cell.revealed = true;
       td.classList.add('revealed');
 
-      if (cellData.mine) {
-        endGame(false); // Lost
+      if (cell.mine) {
         td.classList.add('bomb');
         td.innerText = '💣';
+        alert('Boom! Game Over.');
+        revealAllMines();
+        clearInterval(timerInterval);
         return;
       }
 
-      if (cellData.number > 0) {
-        td.innerText = cellData.number;
-        td.classList.add('n' + cellData.number);
+      if (cell.number > 0) {
+        td.innerText = cell.number;
+        td.classList.add('n' + cell.number);
       } else {
-        // Reveal neighbors if the cell is empty (number 0)
         for (let dr = -1; dr <= 1; dr++) {
           for (let dc = -1; dc <= 1; dc++) {
             if (dr !== 0 || dc !== 0) {
@@ -348,40 +293,62 @@
         }
       }
     }
-    
-    function checkWinCondition() {
-        if (!gameOver && revealedCells === (rows * cols - mines)) {
-            endGame(true); // Won
+
+    function revealAllMines() {
+      mineSet.forEach(key => {
+        const [mr, mc] = key.split(',').map(Number);
+        const mineTd = document.querySelector(`td[data-row="${mr}"][data-col="${mc}"]`);
+        if (!board[mr][mc].flag) {
+          mineTd.classList.add('bomb');
+          mineTd.innerText = '💣';
         }
+      });
     }
 
-    function endGame(isWin) {
-        gameOver = true;
+    function startTimer() {
+      if (timerInterval) return;
+      timerInterval = setInterval(() => {
+        timeElapsed++;
+        document.getElementById('timer').innerText = timeElapsed;
+      }, 1000);
+    }
+
+    function checkWin() {
+      let revealedCount = 0;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (board[r][c].revealed) revealedCount++;
+        }
+      }
+      if (revealedCount === rows * cols - mines) {
         clearInterval(timerInterval);
-
-        if (isWin) {
-            setTimeout(() => {
-                alert(`You won! Your time: ${time} seconds.`);
-                startGame();
-            }, 100); // Short delay to allow final cell to render
-        } else {
-            // Reveal all mines on loss
-            mineSet.forEach(key => {
-                const [mr, mc] = key.split(',').map(Number);
-                const cellData = board[mr][mc];
-                if (!cellData.flag) {
-                    const mineTd = document.querySelector(`td[data-row="${mr}"][data-col="${mc}"]`);
-                    mineTd.classList.add('bomb');
-                    mineTd.innerText = '💣';
-                }
-            });
-            setTimeout(() => {
-                alert('Boom! Game Over.');
-            }, 100);
-        }
+        alert(`You Win! Time: ${timeElapsed} seconds`);
+        startGame();
+      }
     }
-    
-    document.addEventListener('DOMContentLoaded', startGame);
+
+    function addLongPressHandler(td, r, c) {
+      let pressTimer = null;
+
+      td.addEventListener('touchstart', e => {
+        e.preventDefault();
+        pressTimer = setTimeout(() => {
+          toggleFlag(td, r, c);
+          checkWin();
+        }, 1000);
+      });
+
+      td.addEventListener('touchend', e => {
+        clearTimeout(pressTimer);
+      });
+
+      td.addEventListener('touchmove', e => {
+        clearTimeout(pressTimer);
+      });
+    }
+
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    window.onload = startGame;
   </script>
 </body>
 </html>

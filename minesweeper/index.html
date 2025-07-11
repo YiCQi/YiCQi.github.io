@@ -336,11 +336,26 @@
       if (revealedCount === rows * cols - mines) {
         clearInterval(timerInterval);
         timerInterval = null;
+        
+        const player = prompt("🎉 You Win! Enter your name:");
+        if (player) {
+          submitRecord({
+            player: player,
+            col: cols,
+            row: rows,
+            mine: mines,
+            click: flagsCount,
+            label: `${rows}x${cols}`,
+            time: timeElapsed
+          });
+        }
+    
         alert(`You Win! Time: ${timeElapsed} seconds`);
         firstClick = true;
         startGame();
       }
     }
+
 
     function addLongPressHandler(td, r, c) {
       let pressTimer = null;

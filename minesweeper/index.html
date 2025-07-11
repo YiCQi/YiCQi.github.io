@@ -163,16 +163,17 @@
     let clickCount = 0;
     let flagsCount = 0;
 
-    function submitRecord({ player, col, row, mine, click, label, time }) {
+    function submitRecord({ player, col, row, mine, click, flag, time }) {
       fetch("https://script.google.com/macros/s/AKfycbxF54MlDc-3SBeInEl5WNsuC_9cJZZcM-FoTjZe-r-2GrOQzsres-kVyjJbCWXpsPOc4A/exec", {
         method: "POST",
         mode: "no-cors",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ player, col, row, mine, click, label, time })
+        body: JSON.stringify({ player, col, row, mine, click, flag, time })
       });
     }
+
 
     function setDifficulty(r, c, m) {
       document.getElementById('rows').value = r;
@@ -351,7 +352,7 @@
             row: rows,
             mine: mines,
             click: clickCount,
-            label: `${rows}x${cols}`,
+            flag: flagsCount,
             time: timeElapsed
           });
         }

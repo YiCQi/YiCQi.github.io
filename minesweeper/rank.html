@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Minesweeper Rank</title>
+  <title>Minesweeper Leaderboard</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -64,6 +64,7 @@
         <th>Grid</th>
         <th>Mines</th>
         <th>Flags</th>
+        <th>Clicks</th>
         <th>Time (s)</th>
         <th>Date</th>
       </tr>
@@ -74,27 +75,39 @@
   <a href="index.html" class="back">⬅ Back to Game</a>
 
   <script>
-    const SHEET_ID = "1bGqmqw06xsNmmiOKEH5vR2mRC0DHKbGn-rH2AJXbr-M";
+    const SHEET_ID = "在这里填写你的 Sheet ID";  // ⚠️ 替换成你的 ID
     const SHEET_NAME = "Sheet1";
-    const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
+    const QUERY_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${SHEET_NAME}`;
 
-    fetch(CSV_URL)
+    fetch(QUERY_URL)
       .then(res => res.text())
-      .then(csv => {
-        const rows = csv.trim().split('\n').slice(1).map(line => line.split(','));
-        rows.sort((a, b) => parseFloat(a[6]) - parseFloat(b[6])); // 按时间升序
+      .then(text => {
+        const json = JSON.parse(text.substring(47).slice(0, -2));
+        const rows = json.table.rows;
 
         const tbody = document.querySelector('#leaderboard tbody');
-        rows.forEach((row, i) => {
+        const sorted = rows.map(r => ({
+          player: r.c[0]?.v || '',
+          col: r.c[1]?.v || '',
+          row: r.c[2]?.v || '',
+          mine: r.c[3]?.v || '',
+          click: r.c[4]?.v || '',
+          flag: r.c[5]?.v || '',
+          time: r.c[6]?.v || '',
+          timestamp: r.c[7]?.f || ''
+        })).sort((a, b) => a.time - b.time);
+
+        sorted.forEach((row, i) => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td>${i + 1}</td>
-            <td>${row[0]}</td>
-            <td>${row[2]}x${row[1]}</td>
-            <td>${row[3]}</td>
-            <td>${row[4]}</td>
-            <td>${row[6]}</td>
-            <td>${new Date(row[7]).toLocaleString()}</td>
+            <td>${row.player}</td>
+            <td>${row.row}x${row.col}</td>
+            <td>${row.mine}</td>
+            <td>${row.flag}</td>
+            <td>${row.click}</td>
+            <td>${row.time}</td>
+            <td>${row.timestamp}</td>
           `;
           tbody.appendChild(tr);
         });

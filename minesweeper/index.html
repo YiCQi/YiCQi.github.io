@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minesweeper</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    #stats {
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+    #board {
+      display: inline-grid;
+      border: 2px solid #333;
+      user-select: none;
+    }
+    .cell {
+      width: 30px;
+      height: 30px;
+      border: 1px solid #888;
+      background-color: #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .cell.revealed {
+      background-color: #eee;
+    }
+    .cell.flagged {
+      background-color: #f99;
+    }
+    .cell.mine {
+      background-color: red;
+      color: white;
+    }
+    button {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Minesweeper</h1>
+  <div id="stats">
+    <span>Mines Left: <span id="minesLeft"></span></span>
+    &nbsp;|&nbsp;
+    <span>Time: <span id="timer">0</span>s</span>
+  </div>
+  <div id="board"></div>
+  <div><button onclick="initGame()">Restart</button></div>
+
+  <script>
+    const width = 10;
+    const height = 10;
+    const mineCount = 15;
+    let board = [];
+    let revealedCount = 0;
+    let flaggedCount = 0;
+    let gameOver = false;
+    let timer = 0;
+    let timerInterval;
+
+    const boardDiv = document.getElementById("board");
+    const timerDisplay = document.getElementById("timer");
+    const minesLeftDisplay = document.getElementById("minesLeft");
+
+    function initGame() {
+      board = [];
+      gameOver = false;
+      revealedCount = 0;
+      flaggedCount = 0;
+      timer = 0;
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        timer++;
+        timerDisplay.textContent = timer;
+      }, 1000);
+
+      boardDiv.style.gridTemplateColumns = `repeat(${width}, 30px)`;
+      boardDiv.innerHTML = "";
+
+      // Create cells
+      for (let i = 0; i < width * height; i++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.dataset.index = i;
+        boardDiv.appendChild(cell);
+        board.push({
+          mine: false,
+          revealed: false,
+          flagged: false,
+          element: cell,
+          adjacentMines: 0
+        });
+      }
+
+      // Place mines
+      let minesPlaced = 0;
+      while (minesPlaced < mineCount) {
+        const index = Math.floor(Math.random() * board.length);
+        if (!board[index].mine) {
+          board[index].mine = true;
+          minesPlaced++;
+        }
+      }
+
+      // Calculate adjacent mines
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const idx = y * width + x;
+          board[idx].adjacentMines = countAdjacentMines(x, y);
+        }
+      }
+
+      board.forEach(cell => {
+        cell.element.onmousedown = (e) => handleClick(e, cell);
+      });
+
+      updateMinesLeft();
+      timerDisplay.textContent = 0;
+    }
+
+    function countAdjacentMines(x, y) {
+      let count = 0;
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          if (dx === 0 && dy === 0) continue;
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx >= 0 && ny >= 0 && nx < width && ny < height) {
+            const nidx = ny * width + nx;
+            if (board[nidx].mine) count++;
+          }
+        }
+      }
+      return count;
+    }
+
+    function handleClick(e, cell) {
+      e.preventDefault();
+      if (gameOver || cell.revealed) return;
+
+      if (e.button === 0) {
+        if (cell.flagged) return;
+        reveal(cell);
+      } else if (e.button === 2) {
+        toggleFlag(cell);
+      } else if (e.button === 1) {
+        // Middle click to reveal adjacent
+        const idx = board.indexOf(cell);
+        const x = idx % width;
+        const y = Math.floor(idx / width);
+        revealAdjacent(x, y);
+      }
+    }
+
+    function toggleFlag(cell) {
+      if (cell.revealed) return;
+      cell.flagged = !cell.flagged;
+      cell.element.classList.toggle("flagged", cell.flagged);
+      cell.element.textContent = cell.flagged ? "⚑" : "";
+      updateMinesLeft();
+    }
+
+    function updateMinesLeft() {
+      minesLeftDisplay.textContent = mineCount - board.filter(c => c.flagged).length;
+    }
+
+    function reveal(cell) {
+      if (cell.revealed || cell.flagged) return;
+      cell.revealed = true;
+      cell.element.classList.add("revealed");
+      if (cell.mine) {
+        cell.element.classList.add("mine");
+        cell.element.textContent = "✹";
+        endGame(false);
+      } else {
+        revealedCount++;
+        if (cell.adjacentMines > 0) {
+          cell.element.textContent = cell.adjacentMines;
+        } else {
+          const idx = board.indexOf(cell);
+          const x = idx % width;
+          const y = Math.floor(idx / width);
+          revealAdjacent(x, y);
+        }
+        if (revealedCount + mineCount === width * height) endGame(true);
+      }
+    }
+
+    function revealAdjacent(x, y) {
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx >= 0 && ny >= 0 && nx < width && ny < height) {
+            reveal(board[ny * width + nx]);
+          }
+        }
+      }
+    }
+
+    function endGame(win) {
+      gameOver = true;
+      clearInterval(timerInterval);
+      if (win) {
+        alert("Congratulations! You won in " + timer + " seconds.");
+      } else {
+        board.forEach(cell => {
+          if (cell.mine && !cell.revealed) {
+            cell.element.textContent = "✹";
+            cell.element.classList.add("mine");
+          }
+        });
+        alert("Game Over!");
+      }
+    }
+
+    window.oncontextmenu = () => false;
+    initGame();
+  </script>
+</body>
+</html>

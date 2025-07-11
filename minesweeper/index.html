@@ -333,23 +333,24 @@
 
     function addLongPressHandler(td, r, c) {
       let pressTimer = null;
-
+    
       td.addEventListener('touchstart', e => {
-        e.preventDefault();
         pressTimer = setTimeout(() => {
           toggleFlag(td, r, c);
           checkWin();
         }, 1000);
       });
-
+    
       td.addEventListener('touchend', e => {
         clearTimeout(pressTimer);
       });
-
+    
       td.addEventListener('touchmove', e => {
         clearTimeout(pressTimer);
+        e.preventDefault();
       });
     }
+
 
     document.addEventListener('contextmenu', e => e.preventDefault());
     window.onload = startGame;

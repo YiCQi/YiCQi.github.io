@@ -2,18 +2,29 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Minesweeper</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: linear-gradient(135deg, #f0f0f0 25%, #dcdcdc 100%);
-      padding: 30px;
+      padding: 20px;
       text-align: center;
+      touch-action: manipulation; /* 优化移动端触摸响应 */
     }
 
     h1 {
       margin-bottom: 10px;
       color: #333;
+    }
+
+    .game-info {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+      font-weight: bold;
     }
 
     .settings {
@@ -49,7 +60,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
     }
 
     #start {
@@ -69,7 +80,7 @@
 
     #game {
       display: inline-block;
-      margin-top: 2rem;
+      margin-top: 1rem;
       border-collapse: collapse;
       border: 2px solid #333;
       box-shadow: 4px 4px 12px rgba(0,0,0,0.3);
@@ -96,12 +107,12 @@
 
     td.flag {
       background-color: #ffe4b5;
-      color: red;
+      font-size: 20px;
     }
 
     td.bomb {
       background-color: #f08080;
-      color: black;
+      font-size: 20px;
     }
 
     /* Classic Minesweeper number colors */
@@ -113,11 +124,15 @@
     .n6 { color: #008080; } /* 6: Teal */
     .n7 { color: #000000; } /* 7: Black */
     .n8 { color: #808080; } /* 8: Gray */
-
   </style>
 </head>
 <body>
   <h1>Minesweeper</h1>
+
+  <div class="game-info">
+    <div>Time: <span id="timer">0</span></div>
+    <div>Mines Left: <span id="mines-left">0</span></div>
+  </div>
 
   <div class="controls">
     <div class="settings">
@@ -138,9 +153,19 @@
   <table id="game"></table>
 
   <script>
-    let firstClick = true;
     let board = [], mineSet = new Set();
-    let rows = 9, cols = 9, mines = 10;
+    let rows, cols, mines;
+    let revealedCells = 0;
+    let flags = 0;
+    let gameOver = false;
+    
+    // Timer variables
+    let timerInterval;
+    let time = 0;
+
+    // Mobile long press variables
+    let longPressTimer;
+    let longPressDuration = 500; // 500ms for long press
 
     function setDifficulty(r, c, m) {
       document.getElementById('rows').value = r;
@@ -152,11 +177,33 @@
       rows = parseInt(document.getElementById('rows').value);
       cols = parseInt(document.getElementById('cols').value);
       mines = parseInt(document.getElementById('mines').value);
+      
+      if (mines >= rows * cols) {
+          alert("Number of mines must be less than the total number of cells.");
+          return;
+      }
+
+      resetGame();
+      createBoard();
+    }
+    
+    function resetGame() {
+        gameOver = false;
+        revealedCells = 0;
+        flags = 0;
+        mineSet.clear();
+        document.getElementById('mines-left').innerText = mines;
+        
+        // Reset and stop timer
+        clearInterval(timerInterval);
+        time = 0;
+        document.getElementById('timer').innerText = time;
+    }
+
+    function createBoard() {
       const game = document.getElementById('game');
       game.innerHTML = '';
       board = [];
-      firstClick = true;
-      mineSet.clear();
 
       for (let r = 0; r < rows; r++) {
         const row = [];
@@ -165,7 +212,34 @@
           const td = document.createElement('td');
           td.dataset.row = r;
           td.dataset.col = c;
-          td.onmousedown = handleClick;
+          
+          // Desktop: Right-click for flag
+          td.oncontextmenu = function(e) {
+              e.preventDefault();
+              if (gameOver) return;
+              toggleFlag(this, r, c);
+          };
+
+          // Desktop: Left-click
+          td.onclick = function() {
+            if (gameOver) return;
+            handleClick(this, r, c);
+          };
+
+          // Mobile: Touch events for long press
+          td.ontouchstart = function(e) {
+            e.preventDefault();
+            if (gameOver) return;
+            longPressTimer = setTimeout(() => {
+                toggleFlag(this, r, c);
+            }, longPressDuration);
+          };
+
+          td.ontouchend = function(e) {
+            e.preventDefault();
+            clearTimeout(longPressTimer);
+          };
+
           tr.appendChild(td);
           row.push({ revealed: false, mine: false, flag: false, number: 0 });
         }
@@ -174,11 +248,12 @@
       }
     }
 
-    function placeMines(excludeR, excludeC) {
+    function placeMines(firstClickR, firstClickC) {
+      // Place mines randomly, avoiding the first clicked cell
       while (mineSet.size < mines) {
         const r = Math.floor(Math.random() * rows);
         const c = Math.floor(Math.random() * cols);
-        if (r === excludeR && c === excludeC) continue;
+        if (r === firstClickR && c === firstClickC) continue;
         const key = `${r},${c}`;
         if (!mineSet.has(key)) {
           mineSet.add(key);
@@ -186,6 +261,7 @@
         }
       }
 
+      // Calculate numbers for non-mine cells
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           if (board[r][c].mine) continue;
@@ -193,8 +269,8 @@
           for (let dr = -1; dr <= 1; dr++) {
             for (let dc = -1; dc <= 1; dc++) {
               const nr = r + dr, nc = c + dc;
-              if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
-                if (mineSet.has(`${nr},${nc}`)) count++;
+              if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && mineSet.has(`${nr},${nc}`)) {
+                count++;
               }
             }
           }
@@ -203,56 +279,66 @@
       }
     }
 
-    function handleClick(e) {
-      const r = parseInt(this.dataset.row);
-      const c = parseInt(this.dataset.col);
-      if (e.button === 2) { // Right click
-        toggleFlag(this, r, c);
-        return;
-      }
-      if (firstClick) {
+    function startTimer() {
+        if (timerInterval) return; // Prevent multiple intervals
+        timerInterval = setInterval(() => {
+            time++;
+            document.getElementById('timer').innerText = time;
+        }, 1000);
+    }
+
+    function handleClick(cell, r, c) {
+      if (gameOver) return;
+      const cellData = board[r][c];
+      if (cellData.revealed || cellData.flag) return;
+
+      if (revealedCells === 0) {
         placeMines(r, c);
-        firstClick = false;
+        startTimer();
       }
+      
       reveal(r, c);
+      checkWinCondition();
     }
 
     function toggleFlag(cell, r, c) {
-      if (board[r][c].revealed) return;
+      if (gameOver || board[r][c].revealed) return;
+
       board[r][c].flag = !board[r][c].flag;
-      cell.classList.toggle('flag');
-      cell.innerText = board[r][c].flag ? '🚩' : '';
+      if (board[r][c].flag) {
+        flags++;
+        cell.classList.add('flag');
+        cell.innerText = '🚩';
+      } else {
+        flags--;
+        cell.classList.remove('flag');
+        cell.innerText = '';
+      }
+      document.getElementById('mines-left').innerText = mines - flags;
     }
 
     function reveal(r, c) {
       if (r < 0 || r >= rows || c < 0 || c >= cols) return;
-      const cell = board[r][c];
+      const cellData = board[r][c];
       const td = document.querySelector(`td[data-row="${r}"][data-col="${c}"]`);
-      if (cell.revealed || cell.flag) return;
+      if (cellData.revealed || cellData.flag) return;
 
-      cell.revealed = true;
+      cellData.revealed = true;
+      revealedCells++;
       td.classList.add('revealed');
 
-      if (cell.mine) {
+      if (cellData.mine) {
+        endGame(false); // Lost
         td.classList.add('bomb');
         td.innerText = '💣';
-        alert('Boom! Game Over.');
-        // Optionally, reveal all mines
-        mineSet.forEach(key => {
-            const [mr, mc] = key.split(',').map(Number);
-            const mineTd = document.querySelector(`td[data-row="${mr}"][data-col="${mc}"]`);
-            if(!board[mr][mc].flag){
-              mineTd.classList.add('bomb');
-              mineTd.innerText = '💣';
-            }
-        });
         return;
       }
 
-      if (cell.number > 0) {
-        td.innerText = cell.number;
-        td.classList.add('n' + cell.number);
+      if (cellData.number > 0) {
+        td.innerText = cellData.number;
+        td.classList.add('n' + cellData.number);
       } else {
+        // Reveal neighbors if the cell is empty (number 0)
         for (let dr = -1; dr <= 1; dr++) {
           for (let dc = -1; dc <= 1; dc++) {
             if (dr !== 0 || dc !== 0) {
@@ -262,9 +348,40 @@
         }
       }
     }
+    
+    function checkWinCondition() {
+        if (!gameOver && revealedCells === (rows * cols - mines)) {
+            endGame(true); // Won
+        }
+    }
 
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    window.onload = startGame;
+    function endGame(isWin) {
+        gameOver = true;
+        clearInterval(timerInterval);
+
+        if (isWin) {
+            setTimeout(() => {
+                alert(`You won! Your time: ${time} seconds.`);
+                startGame();
+            }, 100); // Short delay to allow final cell to render
+        } else {
+            // Reveal all mines on loss
+            mineSet.forEach(key => {
+                const [mr, mc] = key.split(',').map(Number);
+                const cellData = board[mr][mc];
+                if (!cellData.flag) {
+                    const mineTd = document.querySelector(`td[data-row="${mr}"][data-col="${mc}"]`);
+                    mineTd.classList.add('bomb');
+                    mineTd.innerText = '💣';
+                }
+            });
+            setTimeout(() => {
+                alert('Boom! Game Over.');
+            }, 100);
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', startGame);
   </script>
 </body>
 </html>

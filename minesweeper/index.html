@@ -103,6 +103,17 @@
       background-color: #f08080;
       color: black;
     }
+
+    /* Classic Minesweeper number colors */
+    .n1 { color: #0000ff; } /* 1: Blue */
+    .n2 { color: #008000; } /* 2: Green */
+    .n3 { color: #ff0000; } /* 3: Red */
+    .n4 { color: #000080; } /* 4: Dark Blue */
+    .n5 { color: #800000; } /* 5: Maroon */
+    .n6 { color: #008080; } /* 6: Teal */
+    .n7 { color: #000000; } /* 7: Black */
+    .n8 { color: #808080; } /* 8: Gray */
+
   </style>
 </head>
 <body>
@@ -113,7 +124,7 @@
       <div class="preset-buttons">
         <button onclick="setDifficulty(9,9,10)">Beginner</button>
         <button onclick="setDifficulty(16,16,40)">Intermediate</button>
-        <button onclick="setDifficulty(16,30,99)">Expert</button>
+        <button onclick="setDifficulty(30,16,99)">Expert</button>
       </div>
       <div>
         <label>Rows: <input type="number" id="rows" value="9"></label>
@@ -183,7 +194,7 @@
             for (let dc = -1; dc <= 1; dc++) {
               const nr = r + dr, nc = c + dc;
               if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
-                if (board[nr][nc].mine) count++;
+                if (mineSet.has(`${nr},${nc}`)) count++;
               }
             }
           }
@@ -195,7 +206,10 @@
     function handleClick(e) {
       const r = parseInt(this.dataset.row);
       const c = parseInt(this.dataset.col);
-      if (e.button === 2) return toggleFlag(this, r, c);
+      if (e.button === 2) { // Right click
+        toggleFlag(this, r, c);
+        return;
+      }
       if (firstClick) {
         placeMines(r, c);
         firstClick = false;
@@ -223,15 +237,27 @@
         td.classList.add('bomb');
         td.innerText = '💣';
         alert('Boom! Game Over.');
+        // Optionally, reveal all mines
+        mineSet.forEach(key => {
+            const [mr, mc] = key.split(',').map(Number);
+            const mineTd = document.querySelector(`td[data-row="${mr}"][data-col="${mc}"]`);
+            if(!board[mr][mc].flag){
+              mineTd.classList.add('bomb');
+              mineTd.innerText = '💣';
+            }
+        });
         return;
       }
 
       if (cell.number > 0) {
         td.innerText = cell.number;
+        td.classList.add('n' + cell.number);
       } else {
         for (let dr = -1; dr <= 1; dr++) {
           for (let dc = -1; dc <= 1; dc++) {
-            if (dr || dc) reveal(r + dr, c + dc);
+            if (dr !== 0 || dc !== 0) {
+              reveal(r + dr, c + dc);
+            }
           }
         }
       }

@@ -1,142 +1,193 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>Minesweeper</title>
   <style>
-    :root {
-      --cell-size: 30px;
-      --mine-color: red;
-      --flag-color: orange;
-      --border-color: #888;
-    }
     body {
-      font-family: sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f0f0f0 25%, #dcdcdc 100%);
+      padding: 30px;
       text-align: center;
-      background: #f0f0f0;
     }
+
     h1 {
-      margin: 1rem 0;
+      margin-bottom: 10px;
+      color: #333;
     }
-    #controls {
+
+    .settings {
       margin-bottom: 1rem;
     }
-    #board {
-      display: inline-block;
-      border: 2px solid #444;
-      background: #ccc;
+
+    .settings label {
+      margin: 0 0.5rem;
+      font-weight: bold;
     }
-    .row {
-      display: flex;
+
+    .settings input {
+      width: 4rem;
+      padding: 0.3rem;
+      margin-left: 0.3rem;
     }
-    .cell {
-      width: var(--cell-size);
-      height: var(--cell-size);
-      line-height: var(--cell-size);
-      text-align: center;
-      border-right: 1px solid var(--border-color);
-      border-bottom: 1px solid var(--border-color);
-      background: #e0e0e0;
-      box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #aaa;
+
+    .preset-buttons button {
+      padding: 0.4rem 0.8rem;
+      margin: 0.2rem;
+      border: none;
+      border-radius: 4px;
+      background-color: #b0c4de;
+      color: #fff;
       cursor: pointer;
+    }
+
+    .preset-buttons button:hover {
+      background-color: #6b8eb9;
+    }
+
+    #start {
+      margin-top: 1rem;
+      font-size: 1.2rem;
+      padding: 0.7rem 2rem;
+      background-color: #4682b4;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #start:hover {
+      background-color: #315f7c;
+    }
+
+    #game {
+      display: inline-block;
+      margin-top: 2rem;
+      border-collapse: collapse;
+      border: 2px solid #333;
+      box-shadow: 4px 4px 12px rgba(0,0,0,0.3);
+    }
+
+    td {
+      width: 28px;
+      height: 28px;
+      text-align: center;
+      vertical-align: middle;
+      font-weight: bold;
+      background: linear-gradient(to bottom right, #f8f8f8, #ccc);
+      border: 1px solid #999;
+      cursor: pointer;
+      box-shadow: inset -2px -2px 4px #fff, inset 2px 2px 4px #aaa;
       user-select: none;
     }
-    .cell:first-child {
-      border-left: 1px solid var(--border-color);
-    }
-    .row:first-child .cell {
-      border-top: 1px solid var(--border-color);
-    }
-    .cell.revealed {
-      background: #ddd;
+
+    td.revealed {
+      background: #e0e0e0;
       box-shadow: none;
       cursor: default;
     }
-    .cell.mine { color: var(--mine-color); }
-    .cell.flag { color: var(--flag-color); }
-    #status {
-      margin: 1rem;
-      font-size: 1.2em;
+
+    td.flag {
+      background-color: #ffe4b5;
+      color: red;
     }
-    #start {
-      padding: 0.5em 2em;
-      font-size: 1.2em;
-      cursor: pointer;
-      margin-top: 10px;
+
+    td.bomb {
+      background-color: #f08080;
+      color: black;
     }
   </style>
 </head>
 <body>
   <h1>Minesweeper</h1>
-  <div id="controls">
-    <label>Rows: <input type="number" id="rows" value="9" min="5" max="30" /></label>
-    <label>Cols: <input type="number" id="cols" value="9" min="5" max="30" /></label>
-    <label>Mines: <input type="number" id="mines" value="10" min="1" /></label>
-    <button id="start">Start</button>
+
+  <div class="settings">
+    <div class="preset-buttons">
+      <button onclick="setDifficulty(9,9,10)">Beginner</button>
+      <button onclick="setDifficulty(16,16,40)">Intermediate</button>
+      <button onclick="setDifficulty(30,16,99)">Expert</button>
+    </div>
+    <div>
+      <label>Rows: <input type="number" id="rows" value="9"></label>
+      <label>Cols: <input type="number" id="cols" value="9"></label>
+      <label>Mines: <input type="number" id="mines" value="10"></label>
+    </div>
   </div>
-  <div id="status"></div>
-  <div id="board"></div>
+
+  <button id="start" onclick="startGame()">Start Game</button>
+
+  <table id="game"></table>
 
   <script>
-    const board = document.getElementById("board");
-    const status = document.getElementById("status");
-    const startBtn = document.getElementById("start");
-    let rows, cols, mineCount, cells, firstClick;
+    let firstClick = true;
+    let board = [], mineSet = new Set();
+    let rows = 9, cols = 9, mines = 10;
 
-    startBtn.onclick = () => init();
+    function setDifficulty(r, c, m) {
+      document.getElementById('rows').value = r;
+      document.getElementById('cols').value = c;
+      document.getElementById('mines').value = m;
+    }
 
-    function init() {
-      rows = parseInt(document.getElementById("rows").value);
-      cols = parseInt(document.getElementById("cols").value);
-      mineCount = parseInt(document.getElementById("mines").value);
-      cells = [];
+    function startGame() {
+      rows = parseInt(document.getElementById('rows').value);
+      cols = parseInt(document.getElementById('cols').value);
+      mines = parseInt(document.getElementById('mines').value);
+      const game = document.getElementById('game');
+      game.innerHTML = '';
+      board = [];
       firstClick = true;
-      status.textContent = '';
-      board.innerHTML = "";
+      mineSet.clear();
 
       for (let r = 0; r < rows; r++) {
-        const rowDiv = document.createElement("div");
-        rowDiv.className = "row";
         const row = [];
+        const tr = document.createElement('tr');
         for (let c = 0; c < cols; c++) {
-          const cell = document.createElement("div");
-          cell.className = "cell";
-          cell.dataset.row = r;
-          cell.dataset.col = c;
-          cell.oncontextmenu = e => {
-            e.preventDefault();
-            toggleFlag(cell);
-          };
-          cell.onclick = () => handleClick(r, c);
-          row.push({ el: cell, revealed: false, flagged: false, mine: false, number: 0 });
-          rowDiv.appendChild(cell);
+          const td = document.createElement('td');
+          td.dataset.row = r;
+          td.dataset.col = c;
+          td.onmousedown = handleClick;
+          tr.appendChild(td);
+          row.push({ revealed: false, mine: false, flag: false, number: 0 });
         }
-        board.appendChild(rowDiv);
-        cells.push(row);
+        board.push(row);
+        game.appendChild(tr);
       }
     }
 
     function placeMines(excludeR, excludeC) {
-      let placed = 0;
-      while (placed < mineCount) {
-        let r = Math.floor(Math.random() * rows);
-        let c = Math.floor(Math.random() * cols);
-        if ((r === excludeR && c === excludeC) || cells[r][c].mine) continue;
-        cells[r][c].mine = true;
-        placed++;
+      while (mineSet.size < mines) {
+        const r = Math.floor(Math.random() * rows);
+        const c = Math.floor(Math.random() * cols);
+        if (r === excludeR && c === excludeC) continue;
+        const key = `${r},${c}`;
+        if (!mineSet.has(key)) {
+          mineSet.add(key);
+          board[r][c].mine = true;
+        }
       }
-      // Calculate numbers
+
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-          if (!cells[r][c].mine) {
-            cells[r][c].number = getNeighbors(r, c).filter(n => n.mine).length;
+          if (board[r][c].mine) continue;
+          let count = 0;
+          for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+              const nr = r + dr, nc = c + dc;
+              if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                if (board[nr][nc].mine) count++;
+              }
+            }
           }
+          board[r][c].number = count;
         }
       }
     }
 
-    function handleClick(r, c) {
+    function handleClick(e) {
+      const r = parseInt(this.dataset.row);
+      const c = parseInt(this.dataset.col);
+      if (e.button === 2) return toggleFlag(this, r, c);
       if (firstClick) {
         placeMines(r, c);
         firstClick = false;
@@ -144,76 +195,42 @@
       reveal(r, c);
     }
 
+    function toggleFlag(cell, r, c) {
+      if (board[r][c].revealed) return;
+      board[r][c].flag = !board[r][c].flag;
+      cell.classList.toggle('flag');
+      cell.innerText = board[r][c].flag ? '🚩' : '';
+    }
+
     function reveal(r, c) {
-      const cell = cells[r][c];
-      if (cell.revealed || cell.flagged) return;
+      if (r < 0 || r >= rows || c < 0 || c >= cols) return;
+      const cell = board[r][c];
+      const td = document.querySelector(`td[data-row="${r}"][data-col="${c}"]`);
+      if (cell.revealed || cell.flag) return;
+
       cell.revealed = true;
-      cell.el.classList.add("revealed");
+      td.classList.add('revealed');
+
       if (cell.mine) {
-        cell.el.textContent = "💣";
-        cell.el.classList.add("mine");
-        status.textContent = "Game Over!";
-        revealAll();
+        td.classList.add('bomb');
+        td.innerText = '💣';
+        alert('Boom! Game Over.');
         return;
       }
+
       if (cell.number > 0) {
-        cell.el.textContent = cell.number;
+        td.innerText = cell.number;
       } else {
-        getNeighbors(r, c).forEach(n => reveal(n.r, n.c));
-      }
-      checkWin();
-    }
-
-    function toggleFlag(cellEl) {
-      const r = parseInt(cellEl.dataset.row);
-      const c = parseInt(cellEl.dataset.col);
-      const cell = cells[r][c];
-      if (cell.revealed) return;
-      cell.flagged = !cell.flagged;
-      cell.el.textContent = cell.flagged ? "🚩" : "";
-      cell.el.classList.toggle("flag");
-    }
-
-    function getNeighbors(r, c) {
-      const neighbors = [];
-      for (let dr = -1; dr <= 1; dr++) {
-        for (let dc = -1; dc <= 1; dc++) {
-          if (dr === 0 && dc === 0) continue;
-          const nr = r + dr, nc = c + dc;
-          if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
-            neighbors.push({ ...cells[nr][nc], r: nr, c: nc });
-          }
-        }
-      }
-      return neighbors;
-    }
-
-    function revealAll() {
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const cell = cells[r][c];
-          if (!cell.revealed) {
-            cell.revealed = true;
-            cell.el.classList.add("revealed");
-            if (cell.mine) cell.el.textContent = "💣";
-            else if (cell.number > 0) cell.el.textContent = cell.number;
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (dr || dc) reveal(r + dr, c + dc);
           }
         }
       }
     }
 
-    function checkWin() {
-      let unrevealed = 0;
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          if (!cells[r][c].revealed) unrevealed++;
-        }
-      }
-      if (unrevealed === mineCount) {
-        status.textContent = "🎉 You Win!";
-        revealAll();
-      }
-    }
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    window.onload = startGame;
   </script>
 </body>
 </html>

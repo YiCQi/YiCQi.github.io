@@ -160,6 +160,7 @@
     // 计时器相关变量
     let timerInterval = null;
     let timeElapsed = 0;
+    let clickCount = 0;
     let flagsCount = 0;
 
     function submitRecord({ player, col, row, mine, click, label, time }) {
@@ -194,6 +195,7 @@
       board = [];
       firstClick = true;
       mineSet.clear();
+      clickCount = 0;
       flagsCount = 0;
       timeElapsed = 0;
       clearInterval(timerInterval);
@@ -255,6 +257,9 @@
         toggleFlag(this, r, c);
         checkWin();
         return;
+      }
+      if (!board[r][c].revealed && !board[r][c].flag) {
+        clickCount++;
       }
       if (firstClick) {
         placeMines(r, c);
@@ -337,7 +342,7 @@
       if (revealedCount === rows * cols - mines) {
         clearInterval(timerInterval);
         timerInterval = null;
-        
+      
         const player = prompt("🎉 You Win! Enter your name:");
         if (player) {
           submitRecord({
@@ -345,12 +350,12 @@
             col: cols,
             row: rows,
             mine: mines,
-            click: flagsCount,
+            click: clickCount,
             label: `${rows}x${cols}`,
             time: timeElapsed
           });
         }
-    
+      
         alert(`You Win! Time: ${timeElapsed} seconds`);
         firstClick = true;
         startGame();

@@ -20,7 +20,7 @@
       margin: auto;
       border-collapse: collapse;
       width: 90%;
-      max-width: 800px;
+      max-width: 900px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
 
@@ -58,14 +58,9 @@
       text-align: center;
     }
 
-    .filter-container label {
+    .filter-container select {
+      padding: 0.4rem 0.6rem;
       font-size: 1rem;
-      color: #333;
-    }
-
-    input[type="checkbox"] {
-      transform: scale(1.2);
-      margin-left: 0.5rem;
     }
   </style>
 </head>
@@ -73,10 +68,14 @@
   <h1>🏆 Minesweeper Leaderboard</h1>
 
   <div class="filter-container">
-    <label>
-      <input type="checkbox" id="defaultModeOnly" checked>
-      Only Show Default Mode
-    </label>
+    <label for="modeFilter">Filter by Mode:</label>
+    <select id="modeFilter">
+      <option value="All">All</option>
+      <option value="Beginner">Beginner</option>
+      <option value="Intermediate">Intermediate</option>
+      <option value="Expert">Expert</option>
+      <option value="Custom">Custom</option>
+    </select>
   </div>
 
   <table id="leaderboard">
@@ -84,6 +83,7 @@
       <tr>
         <th>#</th>
         <th>Player</th>
+        <th>Mode</th>
         <th>Grid</th>
         <th>Mines</th>
         <th>Clicks</th>
@@ -101,17 +101,18 @@
     const SHEET_NAME = "Sheet1";
     const QUERY_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${SHEET_NAME}`;
 
-    const defaultModes = [
-      { row: 9, col: 9, mine: 10 },
-      { row: 16, col: 16, mine: 40 },
-      { row: 16, col: 30, mine: 99 },
-    ];
-
-    function isDefaultMode(row, col, mine) {
-      return defaultModes.some(
-        mode => mode.row === row && mode.col === col && mode.mine === mine
-      );
+    function getMode(row, col, mine) {
+      if (row === 9 && col === 9 && mine === 10) return "Beginner";
+      if (row === 16 && col === 16 && mine === 40) return "Intermediate";
+      if (row === 16 && col === 30 && mine === 99) return "Expert";
+      return "Custom";
     }
+
+    function parseIntSafe(val) {
+      return typeof val === 'number' ? val : null;
+    }
+
+    let globalData = [];
 
     function loadLeaderboard() {
       fetch(QUERY_URL)
@@ -120,22 +121,25 @@
           const json = JSON.parse(text.substring(47).slice(0, -2));
           const rows = json.table.rows;
 
-          function parseIntSafe(val) {
-            return typeof val === 'number' ? val : null;
-          }
-          
-          let data = rows.map(r => ({
-            player: r.c[0]?.v || '',
-            col: parseIntSafe(r.c[1]?.v),
-            row: parseIntSafe(r.c[2]?.v),
-            mine: parseIntSafe(r.c[3]?.v),
-            click: parseInt(r.c[4]?.v || 0),
-            time: parseFloat(r.c[6]?.v || 0),
-            timestamp: r.c[7]?.f || r.c[7]?.v || ''
-          })).filter(r => r.row && r.col && r.mine);
+          globalData = rows.map(r => {
+            const col = parseIntSafe(r.c[1]?.v);
+            const row = parseIntSafe(r.c[2]?.v);
+            const mine = parseIntSafe(r.c[3]?.v);
+            const mode = getMode(row, col, mine);
 
-          // Sorting
-          data.sort((a, b) => {
+            return {
+              player: r.c[0]?.v || '',
+              col,
+              row,
+              mine,
+              mode,
+              click: parseInt(r.c[4]?.v || 0),
+              time: parseFloat(r.c[6]?.v || 0),
+              timestamp: r.c[7]?.f || r.c[7]?.v || ''
+            };
+          }).filter(r => r.row && r.col && r.mine);
+
+          globalData.sort((a, b) => {
             const gridA = a.row * a.col * a.mine;
             const gridB = b.row * b.col * b.mine;
             if (gridA !== gridB) return gridA - gridB;
@@ -143,20 +147,22 @@
             return new Date(a.timestamp) - new Date(b.timestamp);
           });
 
-          const defaultOnly = document.getElementById("defaultModeOnly").checked;
-          renderTable(data, defaultOnly);
+          renderTable(globalData, "Beginner,Intermediate,Expert"); // default show standard modes
 
-          document.getElementById("defaultModeOnly").addEventListener("change", () => {
-            renderTable(data, document.getElementById("defaultModeOnly").checked);
+          document.getElementById("modeFilter").addEventListener("change", () => {
+            const selected = document.getElementById("modeFilter").value;
+            const modesToShow = selected === "All" ? null : selected;
+            renderTable(globalData, modesToShow);
           });
         });
     }
 
-    function renderTable(data, defaultOnly) {
+    function renderTable(data, modeFilter) {
       const tbody = document.querySelector('#leaderboard tbody');
       tbody.innerHTML = '';
-      let filtered = defaultOnly
-        ? data.filter(r => isDefaultMode(r.row, r.col, r.mine))
+
+      let filtered = modeFilter
+        ? data.filter(r => modeFilter.split(',').includes(r.mode))
         : data;
 
       filtered.forEach((row, i) => {
@@ -164,6 +170,7 @@
         tr.innerHTML = `
           <td>${i + 1}</td>
           <td>${row.player}</td>
+          <td>${row.mode}</td>
           <td>${row.row}x${row.col}</td>
           <td>${row.mine}</td>
           <td>${row.click}</td>

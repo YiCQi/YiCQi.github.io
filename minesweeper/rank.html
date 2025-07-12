@@ -141,10 +141,11 @@
           }).filter(r => r.row && r.col && r.mine);
 
           globalData.sort((a, b) => {
-            const gridA = a.row * a.col * a.mine;
-            const gridB = b.row * b.col * b.mine;
-            if (gridA !== gridB) return gridA - gridB;
+            if (a.row !== b.row) return a.row - b.row;
+            if (a.col !== b.col) return a.col - b.col;
+            if (a.mine !== b.mine) return a.mine - b.mine;
             if (a.time !== b.time) return a.time - b.time;
+            if (a.click !== b.click) return a.click - b.click;
             return new Date(a.timestamp) - new Date(b.timestamp);
           });
 

@@ -146,6 +146,7 @@
     <!-- 计时器和剩余雷数显示 -->
     <div class="status">
       <div>Time: <span id="timer">0</span>s</div>
+      <div>Clicks: <span id="click-count">0</span></div>
       <div>Mines left: <span id="mines-left">0</span></div>
     </div>
   </div>
@@ -163,6 +164,13 @@
     let timeElapsed = 0;
     let clickCount = 0;
     let flagsCount = 0;
+
+    // 用于检测同时按下左右键的变量
+    let mouseButtonState = {
+      left: false,
+      right: false,
+      lastCell: null
+    };
 
     function submitRecord({ player, col, row, mine, click, flag, time }) {
       console.log('Submitting record:', { player, col, row, mine, click, flag, time }); // Debug log
@@ -204,7 +212,15 @@
       clearInterval(timerInterval);
       timerInterval = null;
       document.getElementById('timer').innerText = '0';
+      document.getElementById('click-count').innerText = '0';
       document.getElementById('mines-left').innerText = mines;
+
+      // 重置鼠标状态
+      mouseButtonState = {
+        left: false,
+        right: false,
+        lastCell: null
+      };
 
       for (let r = 0; r < rows; r++) {
         const row = [];
@@ -213,7 +229,12 @@
           const td = document.createElement('td');
           td.dataset.row = r;
           td.dataset.col = c;
-          td.onmousedown = handleClick;
+          
+          // 使用更清晰的事件处理
+          td.addEventListener('mousedown', handleMouseDown);
+          td.addEventListener('mouseup', handleMouseUp);
+          td.addEventListener('contextmenu', e => e.preventDefault());
+          
           addLongPressHandler(td, r, c);
           tr.appendChild(td);
           row.push({ revealed: false, mine: false, flag: false, number: 0 });
@@ -221,6 +242,79 @@
         board.push(row);
         game.appendChild(tr);
       }
+    }
+
+    function handleMouseDown(e) {
+      const r = parseInt(this.dataset.row);
+      const c = parseInt(this.dataset.col);
+      
+      // 记录按下的按钮
+      if (e.button === 0) mouseButtonState.left = true;
+      if (e.button === 2) mouseButtonState.right = true;
+      
+      mouseButtonState.lastCell = { row: r, col: c, element: this };
+      
+      e.preventDefault();
+    }
+
+    function handleMouseUp(e) {
+      const r = parseInt(this.dataset.row);
+      const c = parseInt(this.dataset.col);
+      const cell = board[r][c];
+      
+      // 确保在同一个格子上释放
+      if (!mouseButtonState.lastCell || 
+          mouseButtonState.lastCell.row !== r || 
+          mouseButtonState.lastCell.col !== c) {
+        // 重置状态
+        mouseButtonState = { left: false, right: false, lastCell: null };
+        return;
+      }
+      
+      // 检查是否同时按下了左右键（和弦操作）
+      if (mouseButtonState.left && mouseButtonState.right) {
+        console.log('Chord detected at', r, c);
+        if (cell.revealed) {
+          clickCount++;
+          updateClickDisplay();
+          chordReveal(r, c);
+          checkWin();
+        }
+      }
+      // 只按右键（标记旗帜）
+      else if (e.button === 2 && mouseButtonState.right && !mouseButtonState.left) {
+        toggleFlag(this, r, c);
+        checkWin();
+      }
+      // 只按左键（揭露格子）
+      else if (e.button === 0 && mouseButtonState.left && !mouseButtonState.right) {
+        if (!cell.revealed && !cell.flag) {
+          clickCount++;
+          updateClickDisplay();
+          if (firstClick) {
+            placeMines(r, c);
+            firstClick = false;
+            startTimer();
+          }
+          reveal(r, c);
+          checkWin();
+        }
+      }
+      // 中键（和弦操作）
+      else if (e.button === 1) {
+        if (cell.revealed) {
+          clickCount++;
+          updateClickDisplay();
+          chordReveal(r, c);
+          checkWin();
+        }
+      }
+      
+      // 重置按钮状态
+      if (e.button === 0) mouseButtonState.left = false;
+      if (e.button === 2) mouseButtonState.right = false;
+      
+      e.preventDefault();
     }
 
     function placeMines(excludeR, excludeC) {
@@ -252,45 +346,8 @@
       }
     }
 
-    function handleClick(e) {
-      const r = parseInt(this.dataset.row);
-      const c = parseInt(this.dataset.col);
-      const cell = board[r][c];
-
-      // --- Right-click for flagging (Desktop) ---
-      if (e.button === 2) {
-        toggleFlag(this, r, c);
-        checkWin();
-        return;
-      }
-
-      // --- Chording action (Desktop middle/multi-button) ---
-      if (e.button === 1 || e.buttons === 3) {
-        e.preventDefault();
-        chordReveal(r, c);
-        checkWin();
-        return;
-      }
-      
-      // --- Primary Click (Left-click on Desktop, Tap on Mobile) ---
-      if (e.button === 0) {
-        if (cell.revealed) {
-          chordReveal(r, c);
-          checkWin();
-          return;
-        }
-
-        if (!cell.flag) {
-          clickCount++;
-          if (firstClick) {
-            placeMines(r, c);
-            firstClick = false;
-            startTimer();
-          }
-          reveal(r, c);
-          checkWin();
-        }
-      }
+    function updateClickDisplay() {
+      document.getElementById('click-count').innerText = clickCount;
     }
 
     function chordReveal(r, c) {
@@ -449,23 +506,69 @@
 
     function addLongPressHandler(td, r, c) {
       let pressTimer = null;
+      let tapCount = 0;
+      let tapTimer = null;
     
+      // 长按标记旗帜
       td.addEventListener('touchstart', e => {
         e.preventDefault();
         pressTimer = setTimeout(() => {
-          toggleFlag(td, r, c);
-          checkWin();
+          if (tapCount === 0) { // 只有单次触摸才标记旗帜
+            toggleFlag(td, r, c);
+            checkWin();
+          }
         }, 500);
       });
     
       td.addEventListener('touchend', e => {
         clearTimeout(pressTimer);
+        
+        // 双击检测（用于移动设备的和弦操作）
+        tapCount++;
+        if (tapCount === 1) {
+          tapTimer = setTimeout(() => {
+            // 单击处理
+            if (board[r][c].revealed) {
+              // 单击已揭露格子：不做任何操作
+              return;
+            } else if (!board[r][c].flag) {
+              // 单击未揭露格子：正常揭露
+              clickCount++;
+              updateClickDisplay();
+              if (firstClick) {
+                placeMines(r, c);
+                firstClick = false;
+                startTimer();
+              }
+              reveal(r, c);
+              checkWin();
+            }
+            tapCount = 0;
+          }, 300);
+        } else if (tapCount === 2) {
+          // 双击处理（和弦操作）
+          clearTimeout(tapTimer);
+          if (board[r][c].revealed) {
+            clickCount++;
+            updateClickDisplay();
+            chordReveal(r, c);
+            checkWin();
+          }
+          tapCount = 0;
+        }
       });
     
       td.addEventListener('touchmove', e => {
         clearTimeout(pressTimer);
+        clearTimeout(tapTimer);
+        tapCount = 0;
       });
     }
+
+    // 全局鼠标事件监听，用于处理在格子外释放鼠标的情况
+    document.addEventListener('mouseup', () => {
+      mouseButtonState = { left: false, right: false, lastCell: null };
+    });
 
     document.addEventListener('contextmenu', e => e.preventDefault());
     window.onload = startGame;

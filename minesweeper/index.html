@@ -411,30 +411,37 @@
         clearInterval(timerInterval);
         timerInterval = null;
       
+        // 双重检查flag数量
+        let actualFlagsFromBoard = 0;
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (board[r][c].flag) actualFlagsFromBoard++;
+          }
+        }
+        
+        console.log('Debug info before win:');
+        console.log('flagsCount variable:', flagsCount);
+        console.log('actualFlagsFromBoard:', actualFlagsFromBoard);
+        console.log('DOM mines-left display:', document.getElementById('mines-left').innerText);
+        
         const player = prompt("🎉 You Win! Enter your name:");
         if (player) {
-          console.log('Win! Final data:', {
+          const finalData = {
             player: player,
             col: cols,
             row: rows,
             mine: mines,
             click: clickCount,
-            flag: flagsCount,
+            flag: actualFlagsFromBoard, // 使用从棋盘实际统计的数量
             time: parseFloat(finalTime.toFixed(3))
-          });
+          };
           
-          submitRecord({
-            player: player,
-            col: cols,
-            row: rows,
-            mine: mines,
-            click: clickCount,
-            flag: flagsCount, // 使用一直维护的 flagsCount
-            time: parseFloat(finalTime.toFixed(3)) // 保留3位小数
-          });
+          console.log('Win! Final data being sent:', finalData);
+          
+          submitRecord(finalData);
         }
       
-        alert(`You Win! Time: ${finalTime.toFixed(3)} seconds`);
+        alert(`You Win! Time: ${finalTime.toFixed(3)} seconds, Flags used: ${actualFlagsFromBoard}`);
         firstClick = true;
         startGame();
       }

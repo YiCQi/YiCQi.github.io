@@ -172,15 +172,15 @@
       lastCell: null
     };
 
-    function submitRecord({ player, col, row, mine, click, flag, time }) {
-      console.log('Submitting record:', { player, col, row, mine, click, flag, time }); // Debug log
+    function submitRecord({ player, col, row, mine, click, flags, time }) {
+      console.log('Submitting record:', { player, col, row, mine, click, flags, time }); // Debug log
       fetch("https://script.google.com/macros/s/AKfycbxF54MlDc-3SBeInEl5WNsuC_9cJZZcM-FoTjZe-r-2GrOQzsres-kVyjJbCWXpsPOc4A/exec", {
         method: "POST",
         mode: "no-cors",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ player, col, row, mine, click, flag, time })
+        body: JSON.stringify({ player, col, row, mine, click, flags, time })
       });
     }
 
@@ -478,7 +478,6 @@
         
         console.log('Debug info before win:');
         console.log('flagsCount variable:', flagsCount);
-        console.log('actualFlagsFromBoard:', actualFlagsFromBoard);
         console.log('DOM mines-left display:', document.getElementById('mines-left').innerText);
         
         const player = prompt("🎉 You Win! Enter your name:");
@@ -489,7 +488,7 @@
             row: rows,
             mine: mines,
             click: clickCount,
-            flag: actualFlagsFromBoard, // 使用从棋盘实际统计的数量
+            flags: flagsCount,
             time: parseFloat(finalTime.toFixed(3))
           };
           

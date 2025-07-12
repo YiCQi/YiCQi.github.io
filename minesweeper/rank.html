@@ -94,7 +94,7 @@
           click: r.c[4]?.v || '',
           flag: r.c[5]?.v || '',
           time: r.c[6]?.v || '',
-          timestamp: r.c[7]?.f || ''
+          timestamp: r.c[7]?.f || r.c[7]?.v || '' // ✅ 修复点
         })).sort((a, b) => a.time - b.time);
 
         sorted.forEach((row, i) => {

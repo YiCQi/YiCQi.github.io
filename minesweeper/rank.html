@@ -62,6 +62,20 @@
       padding: 0.4rem 0.6rem;
       font-size: 1rem;
     }
+
+    .loading {
+      color: #666;
+      font-style: italic;
+    }
+
+    .error {
+      color: #d32f2f;
+      background-color: #ffebee;
+      padding: 1rem;
+      border-radius: 4px;
+      margin: 1rem auto;
+      max-width: 600px;
+    }
   </style>
 </head>
 <body>
@@ -79,7 +93,10 @@
     </select>
   </div>
 
-  <table id="leaderboard">
+  <div id="loading" class="loading">Loading leaderboard...</div>
+  <div id="error" class="error" style="display: none;"></div>
+
+  <table id="leaderboard" style="display: none;">
     <thead>
       <tr>
         <th>#</th>
@@ -98,9 +115,10 @@
   <a href="index.html" class="back">⬅ Back to Game</a>
 
   <script>
-    const SHEET_ID = "1bGqmqw06xsNmmiOKEH5vR2mRC0DHKbGn-rH2AJXbr-M";
-    const SHEET_NAME = "Sheet1";
-    const QUERY_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${SHEET_NAME}`;
+    // Supabase configuration
+    const SUPABASE_URL = 'https://mcrzbhtyagbfeylpfbjw.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jcnpiaHR5YWdiZmV5bHBmYmp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIzNTQyNTksImV4cCI6MjA2NzkzMDI1OX0.9_oqTCpTY9W1eo5r9p57PybxekfjTPB2zydVtVtklWg';
+    const TABLE_NAME = 'minesweeper_scores'; // 假设表名为 minesweeper_scores
 
     function getMode(row, col, mine) {
       if (row === 9 && col === 9 && mine === 10) return "Beginner";
@@ -110,52 +128,96 @@
     }
 
     function parseIntSafe(val) {
-      return typeof val === 'number' ? val : null;
+      return typeof val === 'number' ? val : (val ? parseInt(val) : null);
+    }
+
+    function parseFloatSafe(val) {
+      return typeof val === 'number' ? val : (val ? parseFloat(val) : null);
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      try {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+      } catch (e) {
+        return dateStr;
+      }
     }
 
     let globalData = [];
 
-    function loadLeaderboard() {
-      fetch(QUERY_URL)
-        .then(res => res.text())
-        .then(text => {
-          const json = JSON.parse(text.substring(47).slice(0, -2));
-          const rows = json.table.rows;
+    async function loadLeaderboard() {
+      const loadingEl = document.getElementById('loading');
+      const errorEl = document.getElementById('error');
+      const tableEl = document.getElementById('leaderboard');
 
-          globalData = rows.map(r => {
-            const col = parseIntSafe(r.c[1]?.v);
-            const row = parseIntSafe(r.c[2]?.v);
-            const mine = parseIntSafe(r.c[3]?.v);
-            const mode = getMode(row, col, mine);
+      try {
+        loadingEl.style.display = 'block';
+        errorEl.style.display = 'none';
+        tableEl.style.display = 'none';
 
-            return {
-              player: r.c[0]?.v || '',
-              col,
-              row,
-              mine,
-              mode,
-              click: parseInt(r.c[4]?.v || 0),
-              time: parseFloat(r.c[6]?.v || 0),
-              timestamp: r.c[7]?.f || r.c[7]?.v || ''
-            };
-          }).filter(r => r.row && r.col && r.mine);
-
-          globalData.sort((a, b) => {
-            if (a.row !== b.row) return a.row - b.row;
-            if (a.col !== b.col) return a.col - b.col;
-            if (a.mine !== b.mine) return a.mine - b.mine;
-            if (a.time !== b.time) return a.time - b.time;
-            if (a.click !== b.click) return a.click - b.click;
-            return new Date(a.timestamp) - new Date(b.timestamp);
-          });
-
-          renderTable(globalData, "Standard");
-
-          document.getElementById("modeFilter").addEventListener("change", () => {
-            const selected = document.getElementById("modeFilter").value;
-            renderTable(globalData, selected);
-          });
+        // 从 Supabase 获取数据
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_NAME}?select=*&order=created_at.desc`, {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          }
         });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // 转换数据格式
+        globalData = data.map(record => {
+          const col = parseIntSafe(record.columns || record.col);
+          const row = parseIntSafe(record.rows || record.row);
+          const mine = parseIntSafe(record.mines || record.mine);
+          const mode = getMode(row, col, mine);
+
+          return {
+            player: record.player_name || record.player || 'Anonymous',
+            col,
+            row,
+            mine,
+            mode,
+            click: parseIntSafe(record.clicks || record.click) || 0,
+            time: parseFloatSafe(record.time_seconds || record.time) || 0,
+            timestamp: formatDate(record.created_at || record.timestamp)
+          };
+        }).filter(r => r.row && r.col && r.mine);
+
+        // 排序数据
+        globalData.sort((a, b) => {
+          if (a.row !== b.row) return a.row - b.row;
+          if (a.col !== b.col) return a.col - b.col;
+          if (a.mine !== b.mine) return a.mine - b.mine;
+          if (a.time !== b.time) return a.time - b.time;
+          if (a.click !== b.click) return a.click - b.click;
+          return new Date(a.timestamp) - new Date(b.timestamp);
+        });
+
+        loadingEl.style.display = 'none';
+        tableEl.style.display = 'table';
+        renderTable(globalData, "Standard");
+
+        // 添加筛选器事件监听
+        document.getElementById("modeFilter").addEventListener("change", () => {
+          const selected = document.getElementById("modeFilter").value;
+          renderTable(globalData, selected);
+        });
+
+      } catch (error) {
+        console.error('Error loading leaderboard:', error);
+        loadingEl.style.display = 'none';
+        errorEl.style.display = 'block';
+        errorEl.textContent = `Failed to load leaderboard: ${error.message}. Please check if the database table exists and has the correct structure.`;
+      }
     }
 
     function renderTable(data, modeFilter) {
@@ -173,6 +235,17 @@
         filtered = data.filter(r => r.mode === modeFilter);
       }
 
+      if (filtered.length === 0) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td colspan="8" style="text-align: center; color: #666; font-style: italic;">
+            No records found for ${modeFilter} mode
+          </td>
+        `;
+        tbody.appendChild(tr);
+        return;
+      }
+
       filtered.forEach((row, i) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -182,14 +255,15 @@
           <td>${row.row}x${row.col}</td>
           <td>${row.mine}</td>
           <td>${row.click}</td>
-          <td>${row.time}</td>
+          <td>${row.time.toFixed(2)}</td>
           <td>${row.timestamp}</td>
         `;
         tbody.appendChild(tr);
       });
     }
 
-    loadLeaderboard();
+    // 页面加载时执行
+    document.addEventListener('DOMContentLoaded', loadLeaderboard);
   </script>
 </body>
 </html>

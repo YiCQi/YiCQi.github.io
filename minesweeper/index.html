@@ -191,7 +191,15 @@
 
   <table id="game"></table>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
+    // Supabase 配置
+    const SUPABASE_URL = 'https://mcrzbhtyagbfeylpfbjw.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jcnpiaHR5YWdiZmV5bHBmYmp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIzNTQyNTksImV4cCI6MjA2NzkzMDI1OX0.9_oqTCpTY9W1eo5r9p57PybxekfjTPB2zydVtVtklWg';
+    
+    // 初始化 Supabase 客户端
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     let firstClick = true;
     let board = [], mineSet = new Set();
     let rows = 9, cols = 9, mines = 10;
@@ -212,16 +220,34 @@
       lastCell: null
     };
 
-    function submitRecord({ player, col, row, mine, click, flags, time }) {
-      console.log('Submitting record:', { player, col, row, mine, click, flags, time }); // Debug log
-      fetch("https://script.google.com/macros/s/AKfycbxF54MlDc-3SBeInEl5WNsuC_9cJZZcM-FoTjZe-r-2GrOQzsres-kVyjJbCWXpsPOc4A/exec", {
-        method: "POST",
-        mode: "no-cors",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ player, col, row, mine, click, flags, time })
-      });
+    async function submitRecord({ player, col, row, mine, click, flags, time }) {
+      try {
+        console.log('Submitting record:', { player, col, row, mine, click, flags, time });
+        
+        const { data, error } = await supabase
+          .from('minesweeper_records')
+          .insert([
+            {
+              player: player,
+              col: col,
+              row: row,
+              mine: mine,
+              click: click,
+              flags: flags,
+              time: time
+            }
+          ]);
+
+        if (error) {
+          console.error('Error submitting record:', error);
+          alert('Failed to submit record. Please try again.');
+        } else {
+          console.log('Record submitted successfully:', data);
+        }
+      } catch (error) {
+        console.error('Error submitting record:', error);
+        alert('Failed to submit record. Please check your internet connection.');
+      }
     }
 
     function setDifficulty(r, c, m) {
@@ -532,7 +558,7 @@
       }, 100); // 更新频率提高到100ms，显示更平滑
     }
 
-    function checkWin() {
+    async function checkWin() {
       let revealedCount = 0;
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
@@ -584,7 +610,7 @@
           };
           
           console.log('Win! Final data being sent:', finalData);
-          submitRecord(finalData);
+          await submitRecord(finalData);
         }
       
         alert(`🎉 You Win!\nTime: ${finalTime.toFixed(3)} seconds\nClicks: ${clickCount}\nFlags used: ${actualFlagsFromBoard}\n\nAll cells have been revealed. Click Reset to play again.`);

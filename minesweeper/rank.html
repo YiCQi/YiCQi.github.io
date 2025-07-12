@@ -120,16 +120,19 @@
           const json = JSON.parse(text.substring(47).slice(0, -2));
           const rows = json.table.rows;
 
+          function parseIntSafe(val) {
+            return typeof val === 'number' ? val : null;
+          }
+          
           let data = rows.map(r => ({
             player: r.c[0]?.v || '',
-            col: parseInt(r.c[1]?.v || 0),
-            row: parseInt(r.c[2]?.v || 0),
-            mine: parseInt(r.c[3]?.v || 0),
+            col: parseIntSafe(r.c[1]?.v),
+            row: parseIntSafe(r.c[2]?.v),
+            mine: parseIntSafe(r.c[3]?.v),
             click: parseInt(r.c[4]?.v || 0),
-            // flag: r.c[5]?.v || '', // removed
             time: parseFloat(r.c[6]?.v || 0),
             timestamp: r.c[7]?.f || r.c[7]?.v || ''
-          }));
+          })).filter(r => r.row && r.col && r.mine);
 
           // Sorting
           data.sort((a, b) => {

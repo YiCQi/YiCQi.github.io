@@ -159,11 +159,13 @@
 
     // 计时器相关变量
     let timerInterval = null;
+    let startTime = 0;
     let timeElapsed = 0;
     let clickCount = 0;
     let flagsCount = 0;
 
     function submitRecord({ player, col, row, mine, click, flag, time }) {
+      console.log('Submitting record:', { player, col, row, mine, click, flag, time }); // Debug log
       fetch("https://script.google.com/macros/s/AKfycbxF54MlDc-3SBeInEl5WNsuC_9cJZZcM-FoTjZe-r-2GrOQzsres-kVyjJbCWXpsPOc4A/exec", {
         method: "POST",
         mode: "no-cors",
@@ -173,7 +175,6 @@
         body: JSON.stringify({ player, col, row, mine, click, flag, time })
       });
     }
-
 
     function setDifficulty(r, c, m) {
       document.getElementById('rows').value = r;
@@ -199,6 +200,7 @@
       clickCount = 0;
       flagsCount = 0;
       timeElapsed = 0;
+      startTime = 0;
       clearInterval(timerInterval);
       timerInterval = null;
       document.getElementById('timer').innerText = '0';
@@ -250,10 +252,6 @@
       }
     }
 
-    /**
-     * ✅ UPDATED handleClick function
-     * Now handles mobile tap-to-chord and desktop multi-button clicks.
-     */
     function handleClick(e) {
       const r = parseInt(this.dataset.row);
       const c = parseInt(this.dataset.col);
@@ -268,7 +266,7 @@
 
       // --- Chording action (Desktop middle/multi-button) ---
       if (e.button === 1 || e.buttons === 3) {
-        e.preventDefault(); // Prevent default browser actions
+        e.preventDefault();
         chordReveal(r, c);
         checkWin();
         return;
@@ -276,14 +274,12 @@
       
       // --- Primary Click (Left-click on Desktop, Tap on Mobile) ---
       if (e.button === 0) {
-        // If cell is already revealed, it's a CHORD action (for Mobile and PC)
         if (cell.revealed) {
           chordReveal(r, c);
           checkWin();
           return;
         }
 
-        // If cell is not revealed, it's a standard REVEAL action
         if (!cell.flag) {
           clickCount++;
           if (firstClick) {
@@ -299,7 +295,6 @@
 
     function chordReveal(r, c) {
       const cell = board[r][c];
-      // Action is only valid on a revealed cell with a number
       if (!cell.revealed || cell.number === 0) return;
 
       let flaggedNeighbors = 0;
@@ -313,13 +308,11 @@
         }
       }
 
-      // If flag count matches the cell's number, reveal neighbors
       if (flaggedNeighbors === cell.number) {
         for (let dr = -1; dr <= 1; dr++) {
           for (let dc = -1; dc <= 1; dc++) {
             if (dr === 0 && dc === 0) continue;
             const nr = r + dr, nc = c + dc;
-            // The reveal function already handles bounds checking and not revealing flagged/revealed cells
             reveal(nr, nc);
           }
         }
@@ -328,11 +321,21 @@
 
     function toggleFlag(cell, r, c) {
       if (board[r][c].revealed) return;
-      board[r][c].flag = !board[r][c].flag;
+      
+      const wasFlag = board[r][c].flag;
+      board[r][c].flag = !wasFlag;
       cell.classList.toggle('flag');
       cell.innerText = board[r][c].flag ? '🚩' : '';
-      flagsCount += board[r][c].flag ? 1 : -1;
+      
+      // 更新 flagsCount
+      if (board[r][c].flag) {
+        flagsCount++;
+      } else {
+        flagsCount--;
+      }
+      
       document.getElementById('mines-left').innerText = mines - flagsCount;
+      console.log('Flag toggled. Current flagsCount:', flagsCount); // Debug log
     }
 
     function reveal(r, c) {
@@ -347,6 +350,10 @@
       if (cell.mine) {
         td.classList.add('bomb');
         td.innerText = '💣';
+        
+        // 计算精确时间
+        const finalTime = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
+        
         alert('Boom! Game Over.');
         revealAllMines();
         clearInterval(timerInterval);
@@ -382,10 +389,11 @@
 
     function startTimer() {
       if (timerInterval) return;
+      startTime = Date.now();
       timerInterval = setInterval(() => {
-        timeElapsed++;
+        timeElapsed = Math.floor((Date.now() - startTime) / 1000);
         document.getElementById('timer').innerText = timeElapsed;
-      }, 1000);
+      }, 100); // 更新频率提高到100ms，显示更平滑
     }
 
     function checkWin() {
@@ -397,46 +405,50 @@
       }
     
       if (revealedCount === rows * cols - mines) {
+        // 计算精确的完成时间（包含小数）
+        const finalTime = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
+        
         clearInterval(timerInterval);
         timerInterval = null;
       
         const player = prompt("🎉 You Win! Enter your name:");
         if (player) {
-          // ✅ 真实统计 flag 数量
-          let actualFlags = 0;
-          for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-              if (board[r][c].flag) actualFlags++;
-            }
-          }
-      
+          console.log('Win! Final data:', {
+            player: player,
+            col: cols,
+            row: rows,
+            mine: mines,
+            click: clickCount,
+            flag: flagsCount,
+            time: parseFloat(finalTime.toFixed(3))
+          });
+          
           submitRecord({
             player: player,
             col: cols,
             row: rows,
             mine: mines,
             click: clickCount,
-            flag: actualFlags, // 👈 用精确值替代 flagsCount
-            time: timeElapsed
+            flag: flagsCount, // 使用一直维护的 flagsCount
+            time: parseFloat(finalTime.toFixed(3)) // 保留3位小数
           });
         }
       
-        alert(`You Win! Time: ${timeElapsed} seconds`);
+        alert(`You Win! Time: ${finalTime.toFixed(3)} seconds`);
         firstClick = true;
         startGame();
       }
     }
 
-
     function addLongPressHandler(td, r, c) {
       let pressTimer = null;
     
       td.addEventListener('touchstart', e => {
-        e.preventDefault(); // Prevent mousedown from firing immediately
+        e.preventDefault();
         pressTimer = setTimeout(() => {
           toggleFlag(td, r, c);
           checkWin();
-        }, 500); // 500ms is a more common long-press duration
+        }, 500);
       });
     
       td.addEventListener('touchend', e => {
@@ -447,7 +459,6 @@
         clearTimeout(pressTimer);
       });
     }
-
 
     document.addEventListener('contextmenu', e => e.preventDefault());
     window.onload = startGame;

@@ -75,7 +75,7 @@
   <a href="index.html" class="back">⬅ Back to Game</a>
 
   <script>
-    const SHEET_ID = "在这里填写你的 Sheet ID";  // ⚠️ 替换成你的 ID
+    const SHEET_ID = "1bGqmqw06xsNmmiOKEH5vR2mRC0DHKbGn-rH2AJXbr-M";
     const SHEET_NAME = "Sheet1";
     const QUERY_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${SHEET_NAME}`;
 
@@ -94,7 +94,7 @@
           click: r.c[4]?.v || '',
           flag: r.c[5]?.v || '',
           time: r.c[6]?.v || '',
-          timestamp: r.c[7]?.f || r.c[7]?.v || '' // ✅ 修复点
+          timestamp: r.c[7]?.f || r.c[7]?.v || ''
         })).sort((a, b) => a.time - b.time);
 
         sorted.forEach((row, i) => {

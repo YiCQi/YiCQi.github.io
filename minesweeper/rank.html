@@ -70,11 +70,12 @@
   <div class="filter-container">
     <label for="modeFilter">Filter by Mode:</label>
     <select id="modeFilter">
-      <option value="All">All</option>
+      <option value="Standard" selected>Standard</option>
       <option value="Beginner">Beginner</option>
       <option value="Intermediate">Intermediate</option>
       <option value="Expert">Expert</option>
       <option value="Custom">Custom</option>
+      <option value="All">All</option>
     </select>
   </div>
 
@@ -147,12 +148,11 @@
             return new Date(a.timestamp) - new Date(b.timestamp);
           });
 
-          renderTable(globalData, "Beginner,Intermediate,Expert"); // default show standard modes
+          renderTable(globalData, "Standard");
 
           document.getElementById("modeFilter").addEventListener("change", () => {
             const selected = document.getElementById("modeFilter").value;
-            const modesToShow = selected === "All" ? null : selected;
-            renderTable(globalData, modesToShow);
+            renderTable(globalData, selected);
           });
         });
     }
@@ -161,9 +161,16 @@
       const tbody = document.querySelector('#leaderboard tbody');
       tbody.innerHTML = '';
 
-      let filtered = modeFilter
-        ? data.filter(r => modeFilter.split(',').includes(r.mode))
-        : data;
+      let filtered;
+      if (modeFilter === "All") {
+        filtered = data;
+      } else if (modeFilter === "Standard") {
+        filtered = data.filter(r =>
+          ["Beginner", "Intermediate", "Expert"].includes(r.mode)
+        );
+      } else {
+        filtered = data.filter(r => r.mode === modeFilter);
+      }
 
       filtered.forEach((row, i) => {
         const tr = document.createElement('tr');

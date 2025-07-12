@@ -52,10 +52,33 @@
     .back:hover {
       background-color: #315f7c;
     }
+
+    .filter-container {
+      margin: 1rem auto;
+      text-align: center;
+    }
+
+    .filter-container label {
+      font-size: 1rem;
+      color: #333;
+    }
+
+    input[type="checkbox"] {
+      transform: scale(1.2);
+      margin-left: 0.5rem;
+    }
   </style>
 </head>
 <body>
   <h1>🏆 Minesweeper Leaderboard</h1>
+
+  <div class="filter-container">
+    <label>
+      <input type="checkbox" id="defaultModeOnly" checked>
+      Only Show Default Mode
+    </label>
+  </div>
+
   <table id="leaderboard">
     <thead>
       <tr>
@@ -63,7 +86,6 @@
         <th>Player</th>
         <th>Grid</th>
         <th>Mines</th>
-        <th>Flags</th>
         <th>Clicks</th>
         <th>Time (s)</th>
         <th>Date</th>
@@ -79,39 +101,77 @@
     const SHEET_NAME = "Sheet1";
     const QUERY_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${SHEET_NAME}`;
 
-    fetch(QUERY_URL)
-      .then(res => res.text())
-      .then(text => {
-        const json = JSON.parse(text.substring(47).slice(0, -2));
-        const rows = json.table.rows;
+    const defaultModes = [
+      { row: 9, col: 9, mine: 10 },
+      { row: 16, col: 16, mine: 40 },
+      { row: 16, col: 30, mine: 99 },
+    ];
 
-        const tbody = document.querySelector('#leaderboard tbody');
-        const sorted = rows.map(r => ({
-          player: r.c[0]?.v || '',
-          col: r.c[1]?.v || '',
-          row: r.c[2]?.v || '',
-          mine: r.c[3]?.v || '',
-          click: r.c[4]?.v || '',
-          flag: r.c[5]?.v || '',
-          time: r.c[6]?.v || '',
-          timestamp: r.c[7]?.f || r.c[7]?.v || ''
-        })).sort((a, b) => a.time - b.time);
+    function isDefaultMode(row, col, mine) {
+      return defaultModes.some(
+        mode => mode.row === row && mode.col === col && mode.mine === mine
+      );
+    }
 
-        sorted.forEach((row, i) => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${i + 1}</td>
-            <td>${row.player}</td>
-            <td>${row.row}x${row.col}</td>
-            <td>${row.mine}</td>
-            <td>${row.flag}</td>
-            <td>${row.click}</td>
-            <td>${row.time}</td>
-            <td>${row.timestamp}</td>
-          `;
-          tbody.appendChild(tr);
+    function loadLeaderboard() {
+      fetch(QUERY_URL)
+        .then(res => res.text())
+        .then(text => {
+          const json = JSON.parse(text.substring(47).slice(0, -2));
+          const rows = json.table.rows;
+
+          let data = rows.map(r => ({
+            player: r.c[0]?.v || '',
+            col: parseInt(r.c[1]?.v || 0),
+            row: parseInt(r.c[2]?.v || 0),
+            mine: parseInt(r.c[3]?.v || 0),
+            click: parseInt(r.c[4]?.v || 0),
+            // flag: r.c[5]?.v || '', // removed
+            time: parseFloat(r.c[6]?.v || 0),
+            timestamp: r.c[7]?.f || r.c[7]?.v || ''
+          }));
+
+          // Sorting
+          data.sort((a, b) => {
+            const gridA = a.row * a.col * a.mine;
+            const gridB = b.row * b.col * b.mine;
+            if (gridA !== gridB) return gridA - gridB;
+            if (a.time !== b.time) return a.time - b.time;
+            return new Date(a.timestamp) - new Date(b.timestamp);
+          });
+
+          const defaultOnly = document.getElementById("defaultModeOnly").checked;
+          renderTable(data, defaultOnly);
+
+          document.getElementById("defaultModeOnly").addEventListener("change", () => {
+            renderTable(data, document.getElementById("defaultModeOnly").checked);
+          });
         });
+    }
+
+    function renderTable(data, defaultOnly) {
+      const tbody = document.querySelector('#leaderboard tbody');
+      tbody.innerHTML = '';
+      let filtered = defaultOnly
+        ? data.filter(r => isDefaultMode(r.row, r.col, r.mine))
+        : data;
+
+      filtered.forEach((row, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i + 1}</td>
+          <td>${row.player}</td>
+          <td>${row.row}x${row.col}</td>
+          <td>${row.mine}</td>
+          <td>${row.click}</td>
+          <td>${row.time}</td>
+          <td>${row.timestamp}</td>
+        `;
+        tbody.appendChild(tr);
       });
+    }
+
+    loadLeaderboard();
   </script>
 </body>
 </html>

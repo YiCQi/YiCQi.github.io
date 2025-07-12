@@ -52,6 +52,26 @@
       margin-bottom: 2rem;
     }
 
+    .player-name-section {
+      margin-bottom: 1rem;
+    }
+
+    .player-name-section label {
+      font-weight: bold;
+      margin-right: 0.5rem;
+    }
+
+    .player-name-section input {
+      width: 10rem;
+      padding: 0.4rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .leaderboard-section {
+      margin-top: 1rem;
+    }
+
     #start {
       margin-top: 1rem;
       font-size: 1.2rem;
@@ -113,6 +133,16 @@
       color: black;
     }
 
+    td.bomb.win {
+      background-color: #90ee90;
+      color: black;
+    }
+
+    td.game-over {
+      pointer-events: none;
+      opacity: 0.8;
+    }
+
     /* Classic Minesweeper number colors */
     .n1 { color: #0000ff; } /* 1: Blue */
     .n2 { color: #008000; } /* 2: Green */
@@ -140,7 +170,15 @@
         <label>Mines: <input type="number" id="mines" value="10" min="1"></label>
       </div>
     </div>
-    <a href="rank.html" style="margin-top:1rem; display:inline-block; color:#4682b4;">📈 View Leaderboard</a>
+    
+    <div class="player-name-section">
+      <label>Player Name: <input type="text" id="player-name" placeholder="Enter your name" maxlength="20"></label>
+    </div>
+    
+    <div class="leaderboard-section">
+      <a href="rank.html" style="color:#4682b4;">📈 View Leaderboard</a>
+    </div>
+    
     <button id="start" onclick="startGame()">Reset Game</button>
 
     <!-- 计时器和剩余雷数显示 -->
@@ -157,6 +195,8 @@
     let firstClick = true;
     let board = [], mineSet = new Set();
     let rows = 9, cols = 9, mines = 10;
+    let gameOver = false;
+    let gameWon = false;
 
     // 计时器相关变量
     let timerInterval = null;
@@ -209,6 +249,8 @@
       flagsCount = 0;
       timeElapsed = 0;
       startTime = 0;
+      gameOver = false;
+      gameWon = false;
       clearInterval(timerInterval);
       timerInterval = null;
       document.getElementById('timer').innerText = '0';
@@ -245,6 +287,8 @@
     }
 
     function handleMouseDown(e) {
+      if (gameOver) return; // 游戏结束后阻止所有操作
+      
       const r = parseInt(this.dataset.row);
       const c = parseInt(this.dataset.col);
       
@@ -258,6 +302,8 @@
     }
 
     function handleMouseUp(e) {
+      if (gameOver) return; // 游戏结束后阻止所有操作
+      
       const r = parseInt(this.dataset.row);
       const c = parseInt(this.dataset.col);
       const cell = board[r][c];
@@ -411,11 +457,14 @@
         // 计算精确时间
         const finalTime = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
         
-        alert('Boom! Game Over.');
+        // 锁定游戏
+        gameOver = true;
+        lockGame();
+        
+        alert('Boom! Game Over. Click Reset to play again.');
         revealAllMines();
         clearInterval(timerInterval);
         timerInterval = null;
-        firstClick = true;
         return;
       }
 
@@ -433,6 +482,14 @@
       }
     }
 
+    function lockGame() {
+      // 锁定所有格子，禁止进一步操作
+      const allCells = document.querySelectorAll('#game td');
+      allCells.forEach(cell => {
+        cell.classList.add('game-over');
+      });
+    }
+
     function revealAllMines() {
       mineSet.forEach(key => {
         const [mr, mc] = key.split(',').map(Number);
@@ -442,6 +499,28 @@
           mineTd.innerText = '💣';
         }
       });
+    }
+
+    function revealAllCells() {
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const cell = board[r][c];
+          const td = document.querySelector(`td[data-row="${r}"][data-col="${c}"]`);
+          
+          if (!cell.revealed) {
+            cell.revealed = true;
+            td.classList.add('revealed');
+            
+            if (cell.mine) {
+              td.classList.add('bomb', 'win');
+              td.innerText = '💣';
+            } else if (cell.number > 0) {
+              td.innerText = cell.number;
+              td.classList.add('n' + cell.number);
+            }
+          }
+        }
+      }
     }
 
     function startTimer() {
@@ -465,6 +544,8 @@
         // 计算精确的完成时间（包含小数）
         const finalTime = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
         
+        gameWon = true;
+        gameOver = true;
         clearInterval(timerInterval);
         timerInterval = null;
       
@@ -480,10 +561,20 @@
         console.log('flagsCount variable:', flagsCount);
         console.log('DOM mines-left display:', document.getElementById('mines-left').innerText);
         
-        const player = prompt("🎉 You Win! Enter your name:");
-        if (player) {
+        // 揭露所有格子
+        revealAllCells();
+        
+        // 获取玩家名
+        const playerNameInput = document.getElementById('player-name');
+        let playerName = playerNameInput.value.trim();
+        
+        if (!playerName) {
+          playerName = prompt("🎉 You Win! Enter your name:");
+        }
+        
+        if (playerName) {
           const finalData = {
-            player: player,
+            player: playerName,
             col: cols,
             row: rows,
             mine: mines,
@@ -493,13 +584,10 @@
           };
           
           console.log('Win! Final data being sent:', finalData);
-          
           submitRecord(finalData);
         }
       
-        alert(`You Win! Time: ${finalTime.toFixed(3)} seconds, Flags used: ${actualFlagsFromBoard}`);
-        firstClick = true;
-        startGame();
+        alert(`🎉 You Win!\nTime: ${finalTime.toFixed(3)} seconds\nClicks: ${clickCount}\nFlags used: ${actualFlagsFromBoard}\n\nAll cells have been revealed. Click Reset to play again.`);
       }
     }
 
@@ -510,6 +598,8 @@
     
       // 长按标记旗帜
       td.addEventListener('touchstart', e => {
+        if (gameOver) return; // 游戏结束后阻止所有操作
+        
         e.preventDefault();
         pressTimer = setTimeout(() => {
           if (tapCount === 0) { // 只有单次触摸才标记旗帜
@@ -520,6 +610,8 @@
       });
     
       td.addEventListener('touchend', e => {
+        if (gameOver) return; // 游戏结束后阻止所有操作
+        
         clearTimeout(pressTimer);
         
         // 双击检测（用于移动设备的和弦操作）

@@ -7,196 +7,255 @@
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: linear-gradient(135deg, #f8f9fa 0%, #e2e6ea 100%);
-      padding: 30px;
+      padding: 20px;
       text-align: center;
       color: #333;
     }
-  
+    
     h1 {
       font-size: 2.5rem;
-      margin-bottom: 10px;
+      margin-bottom: 20px;
       color: #2c3e50;
     }
-  
-    .settings {
-      margin-bottom: 1rem;
+    
+    .controls {
+      max-width: 600px;
+      margin: 0 auto 20px;
     }
-  
+    
+    .settings {
+      margin-bottom: 15px;
+    }
+    
     .settings label {
       font-weight: 500;
       margin: 0 0.5rem;
     }
-  
+    
     .settings input {
       width: 4rem;
       padding: 0.4rem;
       border-radius: 6px;
       border: 1px solid #ccc;
     }
-  
+    
+    .preset-buttons {
+      margin-bottom: 10px;
+    }
+    
     .preset-buttons button {
       padding: 0.5rem 1rem;
       margin: 0.3rem;
-      border: none;
-      border-radius: 6px;
-      background-color: #6c757d;
-      color: white;
+      border: 2px inset #c0c0c0;
+      border-radius: 4px;
+      background: linear-gradient(145deg, #f0f0f0, #ffffff);
+      color: #333;
       font-weight: bold;
       cursor: pointer;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1);
       transition: background 0.3s ease, transform 0.2s;
     }
-  
     .preset-buttons button:hover {
-      background-color: #495057;
-      transform: translateY(-2px);
+      background: linear-gradient(145deg, #e0e0e0, #f0f0f0);
+      transform: translateY(-1px);
     }
-  
-    .player-name-section {
-      margin-top: 1.2rem;
-      margin-bottom: 1rem;
+    
+    .player-section {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 15px;
     }
-  
-    .player-name-section label {
-      font-weight: bold;
-      margin-right: 0.5rem;
-    }
-  
-    .player-name-section input {
+    
+    .player-section input {
       width: 12rem;
       padding: 0.5rem;
       border-radius: 6px;
       border: 1px solid #ccc;
     }
-  
-    .leaderboard-section {
-      margin-top: 0.5rem;
-    }
-  
+    
     .leaderboard-btn {
       padding: 0.5rem 1rem;
-      font-size: 1rem;
-      border: none;
-      border-radius: 6px;
-      background-color: #20c997;
+      border: 2px inset #c0c0c0;
+      border-radius: 4px;
+      background: linear-gradient(145deg, #3498db, #2980b9);
       color: white;
-      cursor: pointer;
       font-weight: bold;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-      transition: background 0.3s ease;
+      cursor: pointer;
+      box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1);
+      transition: background 0.3s ease, transform 0.2s;
+      text-decoration: none;
+      display: inline-block;
     }
-  
+    
     .leaderboard-btn:hover {
-      background-color: #198754;
-    }
-  
-    #start {
-      margin-top: 1rem;
-      font-size: 1.1rem;
-      padding: 0.6rem 2rem;
-      background-color: #007bff;
+      background: linear-gradient(145deg, #2980b9, #3498db);
+      transform: translateY(-1px);
+      text-decoration: none;
       color: white;
-      border: none;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.3s ease;
     }
-  
-    #start:hover {
-      background-color: #0056b3;
-    }
-  
-    .status {
-      margin-top: 10px;
-      font-size: 1.1rem;
+    
+    .game-controls {
       display: flex;
       justify-content: center;
-      gap: 30px;
-      font-weight: 500;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
     }
-  
-    .status div {
-      padding: 0.3rem 0.6rem;
+
+    .game-wrapper {
+      overflow-x: auto;
+      max-width: 100%;
+    }
+    
+    .status-container {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+    
+    #start {
+      font-size: 1.1rem;
+      padding: 0.6rem 2rem;
+      background: linear-gradient(145deg, #4CAF50, #45a049);
+      color: white;
+      border: 2px solid #45a049;
       border-radius: 6px;
-      background: #f1f3f5;
-      box-shadow: inset 1px 1px 3px rgba(0,0,0,0.05);
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
     }
-  
+    #start:hover {
+      background: linear-gradient(145deg, #45a049, #4CAF50);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+    }
+    
+    .status-item {
+      background: linear-gradient(145deg, #f0f0f0, #ffffff);
+      border: 2px inset #c0c0c0;
+      padding: 8px 12px;
+      border-radius: 4px;
+      box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1);
+      color: #ff0000;
+      font-weight: 600;
+      font-size: 1rem;
+      min-width: 60px;
+    }
+    
     #game {
       display: inline-block;
-      margin-top: 2rem;
+      margin: 20px auto;
       border-collapse: collapse;
       border: 2px solid #343a40;
       box-shadow: 6px 6px 16px rgba(0,0,0,0.25);
       border-radius: 6px;
       overflow: hidden;
     }
-  
+    
     td {
       width: 32px;
       height: 32px;
+      min-width: 32px;
+      min-height: 32px;
+      max-width: 32px;
+      max-height: 32px;
       text-align: center;
       vertical-align: middle;
       font-weight: bold;
-      font-size: 1rem;
-      background: linear-gradient(to bottom right, #fefefe, #d4d4d4);
-      border: 1px solid #aaa;
+      background: linear-gradient(to bottom right, #fdfdfd, #ced4da);
+      border: 1px solid #adb5bd;
       cursor: pointer;
-      box-shadow: 2px 2px 4px #bbb, -1px -1px 3px #fff;
-      user-select: none;
+      font-size: 1rem;
+      /* 未揭开格子的凸起效果 */
+      box-shadow: 
+        inset 2px 2px 4px rgba(255,255,255,0.8),
+        inset -2px -2px 4px rgba(0,0,0,0.2);
       transition: background 0.1s;
     }
-  
-    td.revealed {
-      background-color: #eaeaea;
-      box-shadow: none;
-      color: #333;
-      font-weight: 600;
+    
+    td:hover {
+      background: linear-gradient(to bottom right, #f8f9fa, #e9ecef);
     }
-  
+    
+    td.revealed {
+      background-color: #e9ecef;
+      /* 已揭开格子的凹陷效果 */
+      box-shadow: 
+        inset -1px -1px 2px rgba(255,255,255,0.5),
+        inset 1px 1px 3px rgba(0,0,0,0.3);
+      cursor: default;
+    }
+    
     td.flag {
       background-color: #ffe4b5;
       color: red;
+      box-shadow: 
+        inset 2px 2px 4px rgba(255,255,255,0.8),
+        inset -2px -2px 4px rgba(0,0,0,0.2);
     }
-  
+    
     td.bomb {
       background-color: #f08080;
       color: black;
     }
-  
+    
     td.bomb.win {
       background-color: #90ee90;
-      color: black;
     }
-  
+    
     td.game-over {
       pointer-events: none;
       opacity: 0.75;
     }
-  
-    /* Classic Minesweeper number colors */
-    .n1 { color: #007bff; }   /* 1: Blue */
-    .n2 { color: #28a745; }   /* 2: Green */
-    .n3 { color: #dc3545; }   /* 3: Red */
-    .n4 { color: #6f42c1; }   /* 4: Purple */
-    .n5 { color: #e83e8c; }   /* 5: Pink */
-    .n6 { color: #17a2b8; }   /* 6: Teal */
-    .n7 { color: #343a40; }   /* 7: Dark */
-    .n8 { color: #6c757d; }   /* 8: Gray */
-  
+    
+    /* 经典扫雷数字颜色 */
+    .n1 { color: #0000ff; }
+    .n2 { color: #008000; }
+    .n3 { color: #ff0000; }
+    .n4 { color: #000080; }
+    .n5 { color: #800000; }
+    .n6 { color: #008080; }
+    .n7 { color: #000000; }
+    .n8 { color: #808080; }
+    
     a {
       text-decoration: none;
       color: #007bff;
     }
-  
     a:hover {
       text-decoration: underline;
+    }
+    
+    @media (max-width: 600px) {
+      .game-controls {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .status-container {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      
+      .player-section {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .status-item {
+        font-size: 0.9rem;
+        padding: 6px 10px;
+        min-width: 50px;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>Minesweeper</h1>
+  <h1>Minesweeper v0.1</h1>
 
   <div class="controls">
     <div class="settings">
@@ -212,25 +271,25 @@
       </div>
     </div>
     
-    <div class="player-name-section">
+    <div class="player-section">
       <label>Player Name: <input type="text" id="player-name" placeholder="Enter your name" maxlength="20"></label>
+      <a href="rank.html" class="leaderboard-btn">📈 View Leaderboard</a>
     </div>
     
-    <div class="leaderboard-section">
-      <a href="rank.html" style="color:#4682b4;">📈 View Leaderboard</a>
-    </div>
-    
-    <button id="start" onclick="startGame()">Reset Game</button>
-
-    <!-- 计时器和剩余雷数显示 -->
-    <div class="status">
-      <div>Time: <span id="timer">0</span>s</div>
-      <div>Clicks: <span id="click-count">0</span></div>
-      <div>Mines left: <span id="mines-left">0</span></div>
+    <div class="game-controls">
+      <div class="status-container">
+        <div class="status-item">⏱️ <span id="timer">0</span>s</div>
+        <!-- <div class="status-item">👆 <span id="click-count">0</span></div> -->
+        <div class="status-item" style="display: none;">👆 <span id="click-count">0</span></div>
+        <button id="start" onclick="startGame()">🎮 Reset Game</button>
+        <div class="status-item">💣 <span id="mines-left">0</span></div>
+      </div>
     </div>
   </div>
 
-  <table id="game"></table>
+  <div class="game-wrapper">
+    <table id="game"></table>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -595,7 +654,9 @@
       startTime = Date.now();
       timerInterval = setInterval(() => {
         timeElapsed = Math.floor((Date.now() - startTime) / 1000);
-        document.getElementById('timer').innerText = timeElapsed;
+        // 限制显示最大999秒
+        const displayTime = Math.min(timeElapsed, 999);
+        document.getElementById('timer').innerText = displayTime;
       }, 100); // 更新频率提高到100ms，显示更平滑
     }
 

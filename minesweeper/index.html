@@ -6,152 +6,144 @@
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #f0f0f0 25%, #dcdcdc 100%);
+      background: linear-gradient(135deg, #f8f9fa 0%, #e2e6ea 100%);
       padding: 30px;
       text-align: center;
-    }
-
-    h1 {
-      margin-bottom: 10px;
       color: #333;
     }
-
-    .settings {
-      margin-bottom: 1rem;
+    
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      color: #2c3e50;
     }
-
+    
     .settings label {
+      font-weight: 500;
       margin: 0 0.5rem;
-      font-weight: bold;
     }
-
+    
     .settings input {
       width: 4rem;
-      padding: 0.3rem;
-      margin-left: 0.3rem;
-    }
-
-    .preset-buttons button {
-      padding: 0.4rem 0.8rem;
-      margin: 0.2rem;
-      border: none;
-      border-radius: 4px;
-      background-color: #b0c4de;
-      color: #fff;
-      cursor: pointer;
-    }
-
-    .preset-buttons button:hover {
-      background-color: #6b8eb9;
-    }
-
-    .controls {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-bottom: 2rem;
-    }
-
-    .player-name-section {
-      margin-bottom: 1rem;
-    }
-
-    .player-name-section label {
-      font-weight: bold;
-      margin-right: 0.5rem;
-    }
-
-    .player-name-section input {
-      width: 10rem;
       padding: 0.4rem;
+      border-radius: 6px;
       border: 1px solid #ccc;
-      border-radius: 4px;
     }
-
-    .leaderboard-section {
-      margin-top: 1rem;
+    
+    .preset-buttons button {
+      padding: 0.5rem 1rem;
+      margin: 0.3rem;
+      border: none;
+      border-radius: 6px;
+      background-color: #6c757d;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      transition: background 0.3s ease, transform 0.2s;
     }
-
+    .preset-buttons button:hover {
+      background-color: #495057;
+      transform: translateY(-2px);
+    }
+    
+    .player-name-section input {
+      width: 12rem;
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    
     #start {
       margin-top: 1rem;
-      font-size: 1.2rem;
-      padding: 0.7rem 2rem;
-      background-color: #4682b4;
+      font-size: 1.1rem;
+      padding: 0.6rem 2rem;
+      background-color: #007bff;
       color: white;
       border: none;
       border-radius: 6px;
+      font-weight: bold;
       cursor: pointer;
+      transition: background 0.3s ease;
     }
-
     #start:hover {
-      background-color: #315f7c;
+      background-color: #0056b3;
     }
-
+    
     .status {
       margin-top: 10px;
       font-size: 1.1rem;
-      color: #333;
       display: flex;
       justify-content: center;
       gap: 20px;
     }
-
+    
     #game {
       display: inline-block;
       margin-top: 2rem;
       border-collapse: collapse;
-      border: 2px solid #333;
-      box-shadow: 4px 4px 12px rgba(0,0,0,0.3);
+      border: 2px solid #343a40;
+      box-shadow: 6px 6px 16px rgba(0,0,0,0.25);
+      border-radius: 6px;
+      overflow: hidden;
     }
-
+    
     td {
-      width: 28px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
       text-align: center;
       vertical-align: middle;
       font-weight: bold;
-      background: linear-gradient(to bottom right, #f8f8f8, #ccc);
-      border: 1px solid #999;
+      background: linear-gradient(to bottom right, #fdfdfd, #ced4da);
+      border: 1px solid #adb5bd;
       cursor: pointer;
-      box-shadow: inset -2px -2px 4px #fff, inset 2px 2px 4px #aaa;
-      user-select: none;
+      font-size: 1rem;
+      box-shadow: inset -2px -2px 3px #fff, inset 2px 2px 3px #adb5bd;
+      transition: background 0.1s;
     }
-
+    
     td.revealed {
-      background: #e0e0e0;
+      background-color: #dee2e6;
       box-shadow: none;
       cursor: default;
     }
-
+    
     td.flag {
       background-color: #ffe4b5;
       color: red;
     }
-
+    
     td.bomb {
       background-color: #f08080;
       color: black;
     }
-
+    
     td.bomb.win {
       background-color: #90ee90;
-      color: black;
     }
-
+    
     td.game-over {
       pointer-events: none;
-      opacity: 0.8;
+      opacity: 0.75;
     }
-
-    /* Classic Minesweeper number colors */
-    .n1 { color: #0000ff; } /* 1: Blue */
-    .n2 { color: #008000; } /* 2: Green */
-    .n3 { color: #ff0000; } /* 3: Red */
-    .n4 { color: #000080; } /* 4: Dark Blue */
-    .n5 { color: #800000; } /* 5: Maroon */
-    .n6 { color: #008080; } /* 6: Teal */
-    .n7 { color: #000000; } /* 7: Black */
-    .n8 { color: #808080; } /* 8: Gray */
+    
+    /* 数字颜色优化 */
+    .n1 { color: #007bff; }
+    .n2 { color: #28a745; }
+    .n3 { color: #dc3545; }
+    .n4 { color: #6f42c1; }
+    .n5 { color: #e83e8c; }
+    .n6 { color: #17a2b8; }
+    .n7 { color: #343a40; }
+    .n8 { color: #6c757d; }
+    
+    a {
+      text-decoration: none;
+      color: #007bff;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>

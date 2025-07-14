@@ -206,6 +206,10 @@
     td.bomb.win {
       background-color: #90ee90;
     }
+
+    td.bomb.lose {
+      background-color: #f08080;
+    }
     
     td.game-over {
       pointer-events: none;
@@ -255,7 +259,11 @@
   </style>
 </head>
 <body>
-  <h1>Minesweeper v0.1</h1>
+  <h1>
+    Minesweeper v0.1
+    <img src="https://yicqi.github.io/images/cats/coco1.jpg" alt="cat" style="height: 60px; vertical-align: middle; margin-left: 10px; border-radius: 6px;" />
+  </h1>
+  
 
   <div class="controls">
     <div class="settings">
@@ -291,6 +299,14 @@
     <table id="game"></table>
   </div>
 
+  <div id="custom-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background: white; padding: 20px; border-radius: 10px; text-align: center; max-width: 90%; box-shadow: 0 6px 18px rgba(0,0,0,0.3);">
+      <div id="modal-content"></div>
+      <button onclick="closeModal()" style="margin-top: 15px; padding: 8px 16px; border: none; background: #3498db; color: white; border-radius: 6px; cursor: pointer;">OK</button>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     // Supabase 配置
@@ -319,6 +335,44 @@
       right: false,
       lastCell: null
     };
+
+    const loseImages = [
+      "https://yicqi.github.io/images/cats/putao3.jpg",
+      "https://yicqi.github.io/images/cats/putaoyoung.jpg",
+      "https://yicqi.github.io/images/cats/putao5.jpg",
+      "https://yicqi.github.io/images/cats/coco5.jpg"
+    ];
+
+    const winImages = [
+      "https://yicqi.github.io/images/cats/coco3.jpg",
+      "https://yicqi.github.io/images/cats/putao.jpg",
+      "https://yicqi.github.io/images/cats/putao7.jpg",
+      "https://yicqi.github.io/images/cats/coco4.jpg"
+    ];
+
+    function getRandomImage(images) {
+      const index = Math.floor(Math.random() * images.length);
+      return images[index];
+    }
+
+    function showResultImage(url) {
+      const container = document.getElementById("result-image");
+      container.innerHTML = `<img src="${url}" style="max-width: 300px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);" alt="Result Cat">`;
+    }
+
+    function showModalWithImage(message, imageUrl) {
+      const modal = document.getElementById('custom-modal');
+      const content = document.getElementById('modal-content');
+      content.innerHTML = `
+        <p style="font-size: 1.2rem; margin-bottom: 1rem;">${message}</p>
+        <img src="${imageUrl}" style="max-width: 300px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);" alt="Result Cat">
+      `;
+      modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('custom-modal').style.display = 'none';
+    }
 
     async function submitRecord({ player, col, row, mine, click, flags, time }) {
       try {
@@ -587,8 +641,8 @@
         gameOver = true;
         lockGame();
         
-        alert('Boom! Game Over. Click Reset to play again.');
-        revealAllMines();
+        showModalWithImage('💥 Boom! Game Over. Click Reset to play again.', getRandomImage(loseImages));
+        revealAllCells();
         clearInterval(timerInterval);
         timerInterval = null;
         return;
@@ -621,7 +675,7 @@
         const [mr, mc] = key.split(',').map(Number);
         const mineTd = document.querySelector(`td[data-row="${mr}"][data-col="${mc}"]`);
         if (!board[mr][mc].flag) {
-          mineTd.classList.add('bomb');
+          mineTd.classList.add('bomb', 'lose');  // 添加 .lose 类
           mineTd.innerText = '💣';
         }
       });
@@ -638,7 +692,7 @@
             td.classList.add('revealed');
             
             if (cell.mine) {
-              td.classList.add('bomb', 'win');
+              td.classList.add('bomb', 'win');  // 添加 .win 类
               td.innerText = '💣';
             } else if (cell.number > 0) {
               td.innerText = cell.number;
@@ -648,6 +702,7 @@
         }
       }
     }
+
 
     function startTimer() {
       if (timerInterval) return;
@@ -697,7 +752,7 @@
         let playerName = playerNameInput.value.trim();
         
         if (!playerName) {
-          playerName = prompt("🎉 You Win! Enter your name:");
+          playerName = prompt("🎉 Enter your name:");
         }
         
         if (playerName) {
@@ -715,7 +770,10 @@
           await submitRecord(finalData);
         }
       
-        alert(`🎉 You Win!\nTime: ${finalTime.toFixed(3)} seconds\nClicks: ${clickCount}\nFlags used: ${actualFlagsFromBoard}\n\nAll cells have been revealed. Click Reset to play again.`);
+        showModalWithImage(
+          `🎉 You Win!<br>Time: ${finalTime.toFixed(3)}s<br>Clicks: ${clickCount}<br>Flags: ${actualFlagsFromBoard}<br><br>Click OK to continue.`,
+          getRandomImage(winImages)
+        );
       }
     }
 

@@ -792,7 +792,9 @@
 
     // 震动反馈函数
     function vibrate(duration = 50) {
-      if ('vibrate' in navigator && controlSettings.vibration) {
+      if (!controlSettings.vibration) return;
+      
+      if ('vibrate' in navigator) {
         navigator.vibrate(duration);
       }
     }
@@ -804,6 +806,8 @@
       let longPressTriggered = false;
       let touchStartTime = 0;
       let touchStartPos = { x: 0, y: 0 };
+      
+
     
       // 长按标记旗帜
       td.addEventListener('touchstart', e => {
@@ -870,10 +874,18 @@
             tapCount = 0;
           }, 200); // 减少延迟时间，提高响应性
         } else if (tapCount === 2) {
-          // 双击处理（和弦操作）
+          // 双击处理
           clearTimeout(tapTimer);
-          if (controlSettings.mobile.chord.includes('double') && board[r][c].revealed) {
-            vibrate(50); // 双击震动反馈
+          
+          // 检查是否是双击标记旗帜
+          if (controlSettings.mobile.flag === 'double' && !board[r][c].revealed) {
+            vibrate(50); // 双击标记震动反馈
+            toggleFlag(td, r, c);
+            checkWin();
+          }
+          // 检查是否是双击和弦操作
+          else if (controlSettings.mobile.chord.includes('double') && board[r][c].revealed) {
+            vibrate(50); // 双击和弦震动反馈
             clickCount++;
             updateClickDisplay();
             chordReveal(r, c);
@@ -905,6 +917,7 @@
     });
 
     document.addEventListener('contextmenu', e => e.preventDefault());
+    
     window.onload = startGame;
 
     // ========== 操作设置相关 ==========

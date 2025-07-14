@@ -260,10 +260,11 @@
 </head>
 <body>
   <h1>
-    Minesweeper v0.1
+    Minesweeper v0.2
     <img src="https://yicqi.github.io/images/cats/coco1.jpg" alt="cat" style="height: 60px; vertical-align: middle; margin-left: 10px; border-radius: 6px;" />
   </h1>
   
+  <button id="settings-btn" style="position: absolute; top: 20px; left: 20px; z-index: 1000; font-size: 1.2rem; border-radius: 6px; border: none; background: #eee; padding: 8px 16px; cursor: pointer;">⚙️ Settings</button>
 
   <div class="controls">
     <div class="settings">
@@ -304,6 +305,18 @@
     <div style="background: white; padding: 20px; border-radius: 10px; text-align: center; max-width: 90%; box-shadow: 0 6px 18px rgba(0,0,0,0.3);">
       <div id="modal-content"></div>
       <button onclick="closeModal()" style="margin-top: 15px; padding: 8px 16px; border: none; background: #3498db; color: white; border-radius: 6px; cursor: pointer;">OK</button>
+    </div>
+  </div>
+
+  <div id="settings-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:10001; justify-content:center; align-items:center;">
+    <div style="background:white; padding:24px; border-radius:10px; min-width:320px; max-width:90vw; box-shadow:0 6px 18px rgba(0,0,0,0.3);">
+      <h2 style="margin-top:0;">Control Settings</h2>
+      <div id="settings-content"></div>
+      <div style="margin-top:18px; text-align:right;">
+        <button id="settings-reset">Restore Default</button>
+        <button id="settings-save">Save</button>
+        <button id="settings-cancel">Cancel</button>
+      </div>
     </div>
   </div>
 
@@ -482,64 +495,48 @@
     }
 
     function handleMouseUp(e) {
-      if (gameOver) return; // 游戏结束后阻止所有操作
-      
+      if (gameOver) return;
       const r = parseInt(this.dataset.row);
       const c = parseInt(this.dataset.col);
       const cell = board[r][c];
-      
-      // 确保在同一个格子上释放
-      if (!mouseButtonState.lastCell || 
-          mouseButtonState.lastCell.row !== r || 
-          mouseButtonState.lastCell.col !== c) {
-        // 重置状态
-        mouseButtonState = { left: false, right: false, lastCell: null };
-        return;
+
+      const s = controlSettings.desktop;
+
+      // 判断当前操作
+      let op = null;
+      if (e.button === 0) op = 'left';
+      else if (e.button === 2) op = 'right';
+      else if (e.button === 1) op = 'middle';
+      // both: 同时按下左右键
+      let isBoth = mouseButtonState.left && mouseButtonState.right;
+
+      // Chord
+      if ((s.chord.includes(op) && cell.revealed) || (isBoth && s.chord.includes('both') && cell.revealed)) {
+        clickCount++;
+        updateClickDisplay();
+        chordReveal(r, c);
+        checkWin();
       }
-      
-      // 检查是否同时按下了左右键（和弦操作）
-      if (mouseButtonState.left && mouseButtonState.right) {
-        console.log('Chord detected at', r, c);
-        if (cell.revealed) {
-          clickCount++;
-          updateClickDisplay();
-          chordReveal(r, c);
-          checkWin();
-        }
-      }
-      // 只按右键（标记旗帜）
-      else if (e.button === 2 && mouseButtonState.right && !mouseButtonState.left) {
+      // Flag
+      else if (s.flag === op && !cell.revealed) {
         toggleFlag(this, r, c);
         checkWin();
       }
-      // 只按左键（揭露格子）
-      else if (e.button === 0 && mouseButtonState.left && !mouseButtonState.right) {
-        if (!cell.revealed && !cell.flag) {
-          clickCount++;
-          updateClickDisplay();
-          if (firstClick) {
-            placeMines(r, c);
-            firstClick = false;
-            startTimer();
-          }
-          reveal(r, c);
-          checkWin();
+      // Open
+      else if (s.open === op && !cell.revealed && !cell.flag) {
+        clickCount++;
+        updateClickDisplay();
+        if (firstClick) {
+          placeMines(r, c);
+          firstClick = false;
+          startTimer();
         }
+        reveal(r, c);
+        checkWin();
       }
-      // 中键（和弦操作）
-      else if (e.button === 1) {
-        if (cell.revealed) {
-          clickCount++;
-          updateClickDisplay();
-          chordReveal(r, c);
-          checkWin();
-        }
-      }
-      
-      // 重置按钮状态
+
       if (e.button === 0) mouseButtonState.left = false;
       if (e.button === 2) mouseButtonState.right = false;
-      
       e.preventDefault();
     }
 
@@ -819,11 +816,8 @@
         if (tapCount === 1) {
           tapTimer = setTimeout(() => {
             // 单击处理
-            if (board[r][c].revealed) {
-              // 单击已揭露格子：不做任何操作
-              return;
-            } else if (!board[r][c].flag) {
-              // 单击未揭露格子：正常揭露
+            if (controlSettings.mobile.open === 'tap' && !board[r][c].flag) {
+              // 点开
               clickCount++;
               updateClickDisplay();
               if (firstClick) {
@@ -839,7 +833,8 @@
         } else if (tapCount === 2) {
           // 双击处理（和弦操作）
           clearTimeout(tapTimer);
-          if (board[r][c].revealed) {
+          if (controlSettings.mobile.chord.includes('double')) {
+            // 回响
             clickCount++;
             updateClickDisplay();
             chordReveal(r, c);
@@ -863,6 +858,175 @@
 
     document.addEventListener('contextmenu', e => e.preventDefault());
     window.onload = startGame;
+
+    // ========== 操作设置相关 ==========
+    const defaultSettings = {
+      desktop: {
+        open: 'left',
+        flag: 'right',
+        chord: ['middle', 'both']
+      },
+      mobile: {
+        open: 'tap',
+        flag: 'long',
+        chord: ['double']
+      }
+    };
+
+    function loadSettings() {
+      try {
+        const s = localStorage.getItem('minesweeper_control_settings');
+        if (!s) return JSON.parse(JSON.stringify(defaultSettings));
+        return JSON.parse(s);
+      } catch {
+        return JSON.parse(JSON.stringify(defaultSettings));
+      }
+    }
+    function saveSettings(settings) {
+      localStorage.setItem('minesweeper_control_settings', JSON.stringify(settings));
+    }
+
+    let controlSettings = loadSettings();
+
+    function renderSettingsUI() {
+      const s = controlSettings;
+      // 电脑端
+      let desktopOps = ['left', 'right', 'middle', 'both'];
+      let desktopLabels = {
+        left: 'Left Click',
+        right: 'Right Click',
+        middle: 'Middle Click',
+        both: 'Left+Right'
+      };
+      let mobileOps = ['tap', 'long', 'double'];
+      let mobileLabels = {
+        tap: 'Tap',
+        long: 'Long Press',
+        double: 'Double Tap'
+      };
+
+      let html = `<h3>PC Controls</h3>
+        <div>
+          <b>Open cell:</b><br>
+          ${desktopOps.map(op =>
+            `<label><input type="radio" name="desktop-open" value="${op}" ${s.desktop.open===op?'checked':''}>${desktopLabels[op]}</label>`
+          ).join(' ')}
+        </div>
+        <div>
+          <b>Flag mine:</b><br>
+          ${desktopOps.map(op =>
+            `<label><input type="radio" name="desktop-flag" value="${op}" ${s.desktop.flag===op?'checked':''}>${desktopLabels[op]}</label>`
+          ).join(' ')}
+        </div>
+        <div>
+          <b>Chord (multi-select):</b><br>
+          ${desktopOps.map(op =>
+            `<label><input type="checkbox" name="desktop-chord" value="${op}" ${s.desktop.chord.includes(op)?'checked':''}>${desktopLabels[op]}</label>`
+          ).join(' ')}
+        </div>
+        <hr>
+        <h3>Mobile Controls</h3>
+        <div>
+          <b>Open cell:</b><br>
+          ${mobileOps.map(op =>
+            `<label><input type="radio" name="mobile-open" value="${op}" ${s.mobile.open===op?'checked':''}>${mobileLabels[op]}</label>`
+          ).join(' ')}
+        </div>
+        <div>
+          <b>Flag mine:</b><br>
+          ${mobileOps.map(op =>
+            `<label><input type="radio" name="mobile-flag" value="${op}" ${s.mobile.flag===op?'checked':''}>${mobileLabels[op]}</label>`
+          ).join(' ')}
+        </div>
+        <div>
+          <b>Chord (multi-select):</b><br>
+          ${mobileOps.map(op =>
+            `<label><input type="checkbox" name="mobile-chord" value="${op}" ${s.mobile.chord.includes(op)?'checked':''}>${mobileLabels[op]}</label>`
+          ).join(' ')}
+        </div>
+        <div style="color:#888;font-size:0.95em;margin-top:8px;">Open and Flag cannot be the same. Chord can be any combination.</div>
+      `;
+      document.getElementById('settings-content').innerHTML = html;
+
+      // 互斥逻辑
+      document.querySelectorAll('input[name="desktop-open"]').forEach(el => {
+        el.onchange = function() {
+          controlSettings.desktop.open = this.value;
+          if (controlSettings.desktop.flag === this.value) {
+            // 自动切换flag到第一个不同的
+            controlSettings.desktop.flag = desktopOps.find(op => op !== this.value);
+          }
+          renderSettingsUI();
+        };
+      });
+      document.querySelectorAll('input[name="desktop-flag"]').forEach(el => {
+        el.onchange = function() {
+          controlSettings.desktop.flag = this.value;
+          if (controlSettings.desktop.open === this.value) {
+            controlSettings.desktop.open = desktopOps.find(op => op !== this.value);
+          }
+          renderSettingsUI();
+        };
+      });
+      document.querySelectorAll('input[name="desktop-chord"]').forEach(el => {
+        el.onchange = function() {
+          if (this.checked) {
+            if (!controlSettings.desktop.chord.includes(this.value)) controlSettings.desktop.chord.push(this.value);
+          } else {
+            controlSettings.desktop.chord = controlSettings.desktop.chord.filter(x=>x!==this.value);
+          }
+        };
+      });
+
+      document.querySelectorAll('input[name="mobile-open"]').forEach(el => {
+        el.onchange = function() {
+          controlSettings.mobile.open = this.value;
+          if (controlSettings.mobile.flag === this.value) {
+            controlSettings.mobile.flag = mobileOps.find(op => op !== this.value);
+          }
+          renderSettingsUI();
+        };
+      });
+      document.querySelectorAll('input[name="mobile-flag"]').forEach(el => {
+        el.onchange = function() {
+          controlSettings.mobile.flag = this.value;
+          if (controlSettings.mobile.open === this.value) {
+            controlSettings.mobile.open = mobileOps.find(op => op !== this.value);
+          }
+          renderSettingsUI();
+        };
+      });
+      document.querySelectorAll('input[name="mobile-chord"]').forEach(el => {
+        el.onchange = function() {
+          if (this.checked) {
+            if (!controlSettings.mobile.chord.includes(this.value)) controlSettings.mobile.chord.push(this.value);
+          } else {
+            controlSettings.mobile.chord = controlSettings.mobile.chord.filter(x=>x!==this.value);
+          }
+        };
+      });
+    }
+
+    // 打开设置时渲染
+    document.getElementById('settings-btn').onclick = function() {
+      renderSettingsUI();
+      document.getElementById('settings-modal').style.display = 'flex';
+    };
+    document.getElementById('settings-cancel').onclick = function() {
+      document.getElementById('settings-modal').style.display = 'none';
+    };
+    document.getElementById('settings-save').onclick = function() {
+      saveSettings(controlSettings);
+      document.getElementById('settings-modal').style.display = 'none';
+    };
+    document.getElementById('settings-reset').onclick = function() {
+      controlSettings = JSON.parse(JSON.stringify(defaultSettings));
+      renderSettingsUI();
+    };
+    // 点击弹窗外部关闭
+    document.getElementById('settings-modal').addEventListener('click', function(e) {
+      if (e.target === this) this.style.display = 'none';
+    });
   </script>
 </body>
 </html>

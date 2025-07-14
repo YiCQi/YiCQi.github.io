@@ -638,6 +638,7 @@
         gameOver = true;
         lockGame();
         
+        vibrate(200); // 游戏失败震动反馈
         showModalWithImage('💥 Boom! Game Over. Click Reset to play again.', getRandomImage(loseImages));
         revealAllMines(); // 输了揭露所有
         clearInterval(timerInterval);
@@ -740,6 +741,7 @@
         
         gameWon = true;
         gameOver = true;
+        vibrate([100, 50, 100]); // 游戏胜利震动反馈 - 震动模式
         clearInterval(timerInterval);
         timerInterval = null;
       
@@ -788,20 +790,38 @@
       }
     }
 
+    // 震动反馈函数
+    function vibrate(duration = 50) {
+      if ('vibrate' in navigator && controlSettings.vibration) {
+        navigator.vibrate(duration);
+      }
+    }
+
     function addLongPressHandler(td, r, c) {
       let pressTimer = null;
       let tapCount = 0;
       let tapTimer = null;
+      let longPressTriggered = false;
+      let touchStartTime = 0;
+      let touchStartPos = { x: 0, y: 0 };
     
       // 长按标记旗帜
       td.addEventListener('touchstart', e => {
         if (gameOver) return; // 游戏结束后阻止所有操作
         
         e.preventDefault();
+        longPressTriggered = false;
+        touchStartTime = Date.now();
+        touchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        
         pressTimer = setTimeout(() => {
-          if (tapCount === 0) { // 只有单次触摸才标记旗帜
-            toggleFlag(td, r, c);
-            checkWin();
+          if (tapCount === 0 && !longPressTriggered) { // 只有单次触摸且未触发长按才标记旗帜
+            longPressTriggered = true;
+            if (controlSettings.mobile.flag === 'long') {
+              vibrate(100); // 长按震动反馈
+              toggleFlag(td, r, c);
+              checkWin();
+            }
           }
         }, 500);
       });
@@ -811,13 +831,32 @@
         
         clearTimeout(pressTimer);
         
+        // 检查是否移动太多，如果是则取消操作
+        const touchEndPos = { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+        const moveDistance = Math.sqrt(
+          Math.pow(touchEndPos.x - touchStartPos.x, 2) + 
+          Math.pow(touchEndPos.y - touchStartPos.y, 2)
+        );
+        
+        if (moveDistance > 10) { // 移动超过10px则取消
+          clearTimeout(tapTimer);
+          tapCount = 0;
+          return;
+        }
+        
+        // 如果长按已触发，不处理单击/双击
+        if (longPressTriggered) {
+          tapCount = 0;
+          return;
+        }
+        
         // 双击检测（用于移动设备的和弦操作）
         tapCount++;
         if (tapCount === 1) {
           tapTimer = setTimeout(() => {
-            // 单击处理
+            // 单击处理 - 延迟执行，避免与双击冲突
             if (controlSettings.mobile.open === 'tap' && !board[r][c].flag) {
-              // 点开
+              vibrate(30); // 单击震动反馈
               clickCount++;
               updateClickDisplay();
               if (firstClick) {
@@ -829,12 +868,12 @@
               checkWin();
             }
             tapCount = 0;
-          }, 300);
+          }, 200); // 减少延迟时间，提高响应性
         } else if (tapCount === 2) {
           // 双击处理（和弦操作）
           clearTimeout(tapTimer);
-          if (controlSettings.mobile.chord.includes('double')) {
-            // 回响
+          if (controlSettings.mobile.chord.includes('double') && board[r][c].revealed) {
+            vibrate(50); // 双击震动反馈
             clickCount++;
             updateClickDisplay();
             chordReveal(r, c);
@@ -848,6 +887,15 @@
         clearTimeout(pressTimer);
         clearTimeout(tapTimer);
         tapCount = 0;
+        longPressTriggered = false;
+      });
+      
+      // 添加触摸取消事件处理
+      td.addEventListener('touchcancel', e => {
+        clearTimeout(pressTimer);
+        clearTimeout(tapTimer);
+        tapCount = 0;
+        longPressTriggered = false;
       });
     }
 
@@ -870,7 +918,8 @@
         open: 'tap',
         flag: 'long',
         chord: ['double']
-      }
+      },
+      vibration: true
     };
 
     function loadSettings() {
@@ -944,6 +993,11 @@
             `<label><input type="checkbox" name="mobile-chord" value="${op}" ${s.mobile.chord.includes(op)?'checked':''}>${mobileLabels[op]}</label>`
           ).join(' ')}
         </div>
+        <hr>
+        <h3>Feedback Settings</h3>
+        <div>
+          <label><input type="checkbox" name="vibration" ${s.vibration?'checked':''}> Enable vibration feedback</label>
+        </div>
         <div style="color:#888;font-size:0.95em;margin-top:8px;">Open and Flag cannot be the same. Chord can be any combination.</div>
       `;
       document.getElementById('settings-content').innerHTML = html;
@@ -1003,6 +1057,13 @@
           } else {
             controlSettings.mobile.chord = controlSettings.mobile.chord.filter(x=>x!==this.value);
           }
+        };
+      });
+      
+      // 震动设置
+      document.querySelectorAll('input[name="vibration"]').forEach(el => {
+        el.onchange = function() {
+          controlSettings.vibration = this.checked;
         };
       });
     }

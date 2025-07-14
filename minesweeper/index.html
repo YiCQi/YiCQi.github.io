@@ -182,7 +182,7 @@
     }
     
     td.revealed {
-      background-color: #e9ecef;
+      background: #dedede !important; /* 更深色，且彻底覆盖渐变 */
       /* 已揭开格子的凹陷效果 */
       box-shadow: 
         inset -1px -1px 2px rgba(255,255,255,0.5),
@@ -204,11 +204,11 @@
     }
     
     td.bomb.win {
-      background-color: #90ee90;
+      background-color: #90ee90 !important;
     }
 
     td.bomb.lose {
-      background-color: #f08080;
+      background-color: #f08080 !important;
     }
     
     td.game-over {
@@ -642,7 +642,7 @@
         lockGame();
         
         showModalWithImage('💥 Boom! Game Over. Click Reset to play again.', getRandomImage(loseImages));
-        revealAllCells();
+        revealAllMines(); // 输了揭露所有
         clearInterval(timerInterval);
         timerInterval = null;
         return;
@@ -671,14 +671,28 @@
     }
 
     function revealAllMines() {
-      mineSet.forEach(key => {
-        const [mr, mc] = key.split(',').map(Number);
-        const mineTd = document.querySelector(`td[data-row="${mr}"][data-col="${mc}"]`);
-        if (!board[mr][mc].flag) {
-          mineTd.classList.add('bomb', 'lose');  // 添加 .lose 类
-          mineTd.innerText = '💣';
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const cell = board[r][c];
+          const td = document.querySelector(`td[data-row="${r}"][data-col="${c}"]`);
+          if (!cell.revealed) {
+            cell.revealed = true;
+            td.classList.add('revealed');
+          }
+          if (cell.mine) {
+            if (!cell.flag) {
+              td.classList.add('bomb', 'lose');  // 红色雷
+              td.innerText = '💣';
+            } else {
+              td.classList.add('bomb'); // 插旗的雷
+              td.innerText = '🚩';
+            }
+          } else if (cell.number > 0) {
+            td.innerText = cell.number;
+            td.classList.add('n' + cell.number);
+          }
         }
-      });
+      }
     }
 
     function revealAllCells() {

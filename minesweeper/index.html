@@ -503,6 +503,27 @@
       document.getElementById('mines-left').innerText = mines;
       document.getElementById('result-info').innerHTML = '';
 
+      // 新增：有趣提示语
+      const funTips = [
+        "How's your luck today?",
+        "Watch out for the mines!",
+        "They say the first click is always safe!",
+        "Can you beat the fastest record?",
+        "The more flags you place, the faster your heart beats!",
+        "Rumor has it: cats can help you find mines!",
+        "Try double-clicking or long-pressing for new actions!",
+        "Every click is an adventure!",
+        "Good luck, Minesweeper hero!",
+        "Sometimes, luck matters more than skill!",
+        "Can you clear the board with zero mistakes?",
+        "Don't forget to check the leaderboard!",
+        "Is the top-left cell really the safest?",
+        "Will you become a Minesweeper master?",
+        "Cats love safe cells, or so they say!",
+      ];
+      const tip = funTips[Math.floor(Math.random() * funTips.length)];
+      document.getElementById('result-info').innerHTML = `<span style="color:#888;font-size:1.1em;">${tip}</span>`;
+
       // 重置鼠标状态
       mouseButtonState = {
         left: false,

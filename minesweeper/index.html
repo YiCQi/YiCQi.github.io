@@ -234,6 +234,29 @@
       text-decoration: underline;
     }
     
+    /* 踩到的致命雷特效 */
+    td.fatal-bomb {
+      animation: bomb-shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+      box-shadow: 0 0 16px 6px #ff0000, 0 0 32px 12px #ffb3b3;
+      background: #ff3333 !important;
+      color: #fff !important;
+      z-index: 2;
+      position: relative;
+      border: 2px solid #ff0000 !important;
+    }
+    @keyframes bomb-shake {
+      10%, 90% { transform: translateX(-2px); }
+      20%, 80% { transform: translateX(4px); }
+      30%, 50%, 70% { transform: translateX(-8px); }
+      40%, 60% { transform: translateX(8px); }
+    }
+
+    /* 其他雷变暗 */
+    td.dim-bomb {
+      opacity: 0.4;
+      filter: grayscale(80%);
+    }
+    
     @media (max-width: 600px) {
       .game-controls {
         flex-direction: column;
@@ -628,17 +651,13 @@
       td.classList.add('revealed');
 
       if (cell.mine) {
-        td.classList.add('bomb');
+        td.classList.add('bomb', 'fatal-bomb');
         td.innerText = '💣';
-        
-        // 计算精确时间
-        const finalTime = startTime > 0 ? (Date.now() - startTime) / 1000 : 0;
-        
-        // 锁定游戏
+        // 记录致命雷坐标
+        window.fatalBomb = { r, c };
         gameOver = true;
         lockGame();
-        
-        vibrate(200); // 游戏失败震动反馈
+        vibrate(200);
         showModalWithImage('💥 Boom! Game Over. Click Reset to play again.', getRandomImage(loseImages));
         revealAllMines(); // 输了揭露所有
         clearInterval(timerInterval);
@@ -679,10 +698,16 @@
           }
           if (cell.mine) {
             if (!cell.flag) {
-              td.classList.add('bomb', 'lose');  // 红色雷
-              td.innerText = '💣';
+              // 判断是不是致命雷
+              if (window.fatalBomb && window.fatalBomb.r === r && window.fatalBomb.c === c) {
+                td.classList.add('bomb', 'lose', 'fatal-bomb');
+                td.innerText = '💣';
+              } else {
+                td.classList.add('bomb', 'lose', 'dim-bomb');
+                td.innerText = '💣';
+              }
             } else {
-              td.classList.add('bomb'); // 插旗的雷
+              td.classList.add('bomb', 'dim-bomb');
               td.innerText = '🚩';
             }
           } else if (cell.number > 0) {

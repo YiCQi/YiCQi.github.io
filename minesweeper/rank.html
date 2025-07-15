@@ -77,6 +77,10 @@
       <option value="Custom">Custom</option>
       <option value="All">All</option>
     </select>
+    <label style="margin-left:2em;">
+      <input type="checkbox" id="hideDuplicateUsers" checked style="vertical-align:middle; margin-right:0.3em;" />
+      Hide duplicate users
+    </label>
   </div>
 
   <table id="leaderboard">
@@ -88,7 +92,6 @@
         <th>Grid</th>
         <th>Mines</th>
         <th>Clicks</th>
-        <th>Flags</th>
         <th>Time (s)</th>
         <th>Date</th>
       </tr>
@@ -99,8 +102,9 @@
   <a href="index.html" class="back">⬅ Back to Game</a>
 
   <script>
-    const SUPABASE_URL = 'https://mcrzbhtyagbfeylpfbjw.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jcnpiaHR5YWdiZmV5bHBmYmp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIzNTQyNTksImV4cCI6MjA2NzkzMDI1OX0.9_oqTCpTY9W1eo5r9p57PybxekfjTPB2zydVtVtklWg';
+    const SHEET_ID = "1bGqmqw06xsNmmiOKEH5vR2mRC0DHKbGn-rH2AJXbr-M";
+    const SHEET_NAME = "Sheet1";
+    const QUERY_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${SHEET_NAME}`;
 
     function getMode(row, col, mine) {
       if (row === 9 && col === 9 && mine === 10) return "Beginner";
@@ -116,42 +120,27 @@
     let globalData = [];
 
     function loadLeaderboard() {
-      fetch(`${SUPABASE_URL}/rest/v1/minesweeper_records?select=*&order=created_at.desc`, {
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      })
-        .then(res => {
-          console.log('Response status:', res.status);
-          console.log('Response headers:', res.headers);
-          if (!res.ok) {
-            return res.text().then(text => {
-              throw new Error(`HTTP ${res.status}: ${text}`);
-            });
-          }
-          return res.json();
-        })
-        .then(data => {
-          console.log('Data received:', data);
-          console.log('Data length:', data.length);
-          globalData = data.map(record => {
-            const col = parseIntSafe(record.col);
-            const row = parseIntSafe(record.row);
-            const mine = parseIntSafe(record.mine);
+      fetch(QUERY_URL)
+        .then(res => res.text())
+        .then(text => {
+          const json = JSON.parse(text.substring(47).slice(0, -2));
+          const rows = json.table.rows;
+
+          globalData = rows.map(r => {
+            const col = parseIntSafe(r.c[1]?.v);
+            const row = parseIntSafe(r.c[2]?.v);
+            const mine = parseIntSafe(r.c[3]?.v);
             const mode = getMode(row, col, mine);
 
             return {
-              player: record.player || '',
+              player: r.c[0]?.v || '',
               col,
               row,
               mine,
               mode,
-              click: parseInt(record.click || 0),
-              flags: parseInt(record.flags || 0),
-              time: parseFloat(record.time || 0),
-              timestamp: record.created_at ? new Date(record.created_at).toLocaleString() : ''
+              click: parseInt(r.c[4]?.v || 0),
+              time: parseFloat(r.c[6]?.v || 0),
+              timestamp: r.c[7]?.f || r.c[7]?.v || ''
             };
           }).filter(r => r.row && r.col && r.mine);
 
@@ -161,7 +150,6 @@
             if (a.mine !== b.mine) return a.mine - b.mine;
             if (a.time !== b.time) return a.time - b.time;
             if (a.click !== b.click) return a.click - b.click;
-            if (a.flags !== b.flags) return a.flags - b.flags;
             return new Date(a.timestamp) - new Date(b.timestamp);
           });
 
@@ -171,13 +159,23 @@
             const selected = document.getElementById("modeFilter").value;
             renderTable(globalData, selected);
           });
-        })
-        .catch(error => {
-          console.error('Error loading leaderboard:', error);
-          document.querySelector('#leaderboard tbody').innerHTML = `
-            <tr><td colspan="9" style="color: red;">Failed to load leaderboard: ${error.message}</td></tr>
-          `;
+          document.getElementById("hideDuplicateUsers").addEventListener("change", () => {
+            const selected = document.getElementById("modeFilter").value;
+            renderTable(globalData, selected);
+          });
         });
+    }
+
+    function getUniqueBestRecords(data) {
+      // For each (player, row, col, mine), keep the record with the shortest time
+      const map = new Map();
+      data.forEach(row => {
+        const key = `${row.player}__${row.row}__${row.col}__${row.mine}`;
+        if (!map.has(key) || row.time < map.get(key).time) {
+          map.set(key, row);
+        }
+      });
+      return Array.from(map.values());
     }
 
     function renderTable(data, modeFilter) {
@@ -195,6 +193,11 @@
         filtered = data.filter(r => r.mode === modeFilter);
       }
 
+      const hideDuplicate = document.getElementById('hideDuplicateUsers').checked;
+      if (hideDuplicate) {
+        filtered = getUniqueBestRecords(filtered);
+      }
+
       filtered.forEach((row, i) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -204,7 +207,6 @@
           <td>${row.row}x${row.col}</td>
           <td>${row.mine}</td>
           <td>${row.click}</td>
-          <td>${row.flags}</td>
           <td>${row.time}</td>
           <td>${row.timestamp}</td>
         `;

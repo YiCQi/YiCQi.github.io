@@ -77,6 +77,10 @@
       <option value="Custom">Custom</option>
       <option value="All">All</option>
     </select>
+    <label style="margin-left:2em;">
+      <input type="checkbox" id="hideDuplicateUsers" checked style="vertical-align:middle; margin-right:0.3em;" />
+      Hide duplicate users for each mode
+    </label>
   </div>
 
   <table id="leaderboard">
@@ -114,6 +118,17 @@
     }
 
     let globalData = [];
+
+    function setupEventListeners() {
+      document.getElementById("modeFilter").addEventListener("change", () => {
+        const selected = document.getElementById("modeFilter").value;
+        renderTable(globalData, selected);
+      });
+      document.getElementById("hideDuplicateUsers").addEventListener("change", () => {
+        const selected = document.getElementById("modeFilter").value;
+        renderTable(globalData, selected);
+      });
+    }
 
     function loadLeaderboard() {
       fetch(`${SUPABASE_URL}/rest/v1/minesweeper_records?select=*&order=created_at.desc`, {
@@ -165,12 +180,8 @@
             return new Date(a.timestamp) - new Date(b.timestamp);
           });
 
-          renderTable(globalData, "Standard");
-
-          document.getElementById("modeFilter").addEventListener("change", () => {
-            const selected = document.getElementById("modeFilter").value;
-            renderTable(globalData, selected);
-          });
+          renderTable(globalData, document.getElementById("modeFilter").value);
+          setupEventListeners();
         })
         .catch(error => {
           console.error('Error loading leaderboard:', error);
@@ -178,6 +189,18 @@
             <tr><td colspan="9" style="color: red;">Failed to load leaderboard: ${error.message}</td></tr>
           `;
         });
+    }
+
+    function getUniqueBestRecords(data) {
+      // For each (player, row, col, mine), keep the record with the shortest time
+      const map = new Map();
+      data.forEach(row => {
+        const key = `${row.player}__${row.row}__${row.col}__${row.mine}`;
+        if (!map.has(key) || row.time < map.get(key).time) {
+          map.set(key, row);
+        }
+      });
+      return Array.from(map.values());
     }
 
     function renderTable(data, modeFilter) {
@@ -193,6 +216,11 @@
         );
       } else {
         filtered = data.filter(r => r.mode === modeFilter);
+      }
+
+      const hideDuplicate = document.getElementById('hideDuplicateUsers').checked;
+      if (hideDuplicate) {
+        filtered = getUniqueBestRecords(filtered);
       }
 
       filtered.forEach((row, i) => {

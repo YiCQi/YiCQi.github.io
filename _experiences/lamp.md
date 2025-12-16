@@ -1,5 +1,5 @@
 ---
-title: "LAMPOpti: Advanced LAMP Primer Design Model"
+title: "EasyLAMP: Advanced LAMP Primer Design Model"
 institution: "ZJU-UoE Institute, Zhejiang University"
 mentor: "Dr. Hugo C. Sámano-Sánchez"
 start_date: 2025-02

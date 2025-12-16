@@ -22,9 +22,9 @@ Educations
 
 Publications
 ======
-- Tian, R., Xue, Z., Chen, Y., **Qi, Y.**, Zhang, J., Yuan, J., Ruan, D., Lin, J., Liu, J., Wang, D., Youqiong, Y., & Liu, W. (2025). "Integrating Cross-Sample and Cross-Modal Data for Spatial Transcriptomics and Metabolomics with SpatialMETA." Nature Communications (Under review).
+- Tian, R., Xue, Z., Chen, Y., **Qi, Y.**, Zhang, J., Yuan, J., Ruan, D., Lin, J., Liu, J., Wang, D., Youqiong, Y., & Liu, W. (2025). "Integrating Cross-Sample and Cross-Modal Data for Spatial Transcriptomics and Metabolomics with SpatialMETA." Nature Communications， https://www.nature.com/articles/s41467-025-63915-z.
 - Xue, Z., Wu, L., Bing, G., Tian, R., Chen, Y., **Qi, Y.**, Dong, T., Bai, Y., Yu, Z., He, B., Wang, L., Liu, Z., Yao, J., Lu, L., & Liu, W. (2025). "A pan-disease and population-level single-cell TCRαβ
-repertoire reference." Cell Discovery (Under review).
+repertoire reference." Cell Discovery, https://www.nature.com/articles/s41421-025-00836-7.
 
 Skills
 ======
@@ -35,12 +35,14 @@ Machine Learning, Statistics, Scientific illustration (Adobe Illustrator, BioRen
 
 Honors & Scholarships
 ======
+- Zhejiang Provincial Government Scholarship, 2024 – 2025
 - Second-Class Scholarship, Zhejiang University, 2022 - 2024
-- Academic Scholarship, ZJU-UoE Institute, 2022 - 2024
+- Academic Scholarship, ZJU-UoE Institute, 2022 - 2025
 - Student Innovation and Entrepreneurship Award, Zhejiang University, 2022 - 2024
 
 Activities
 ======
+- GPB Omics & Bioinformatics Frontiers Symposium 2025, Best Poster, 07/2025
 - “ShuWei Cup” Mathematical Contest in Modelling, Meritorious (First-Class prize, Top 5%), 01/2024
 - “HuaShu Cup” Mathematical Contest in Modelling, Second-Class prize, 10/2022
 
